@@ -1,4 +1,10 @@
 
+// main
+(() => {
+    polyfills.install()
+    control.initialize()
+})()
+
 namespace dom {
     export function canvas(): HTMLElement {
         return document.getElementById('canvas-frame')
@@ -341,5 +347,3 @@ namespace control {
     }
 }
 
-polyfills.install()
-control.initialize()
