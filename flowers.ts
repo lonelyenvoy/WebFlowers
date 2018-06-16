@@ -154,16 +154,19 @@ namespace control {
         }, onProgress, onError)
     }
 
-    function loadObjects(scene: THREE.Scene): void {
-        // land
+    function loadLand(scene: THREE.Scene): void {
         loadObject('models/land.obj', 'models/land.jpg', (group: THREE.Group) => {
             scene.add(threeEx.GroupHelper.of(group).scale(100, 100, 100).visualize().collect())
         })
-        // stem
+    }
+
+    function loadStem(scene: THREE.Scene): void {
         loadObject('models/stem.obj', 'models/stem.jpg', (group: THREE.Group) => {
             scene.add(threeEx.GroupHelper.of(group).scale(1, 0.1, 0.1).visualize().collect())
         })
-        // torus
+    }
+
+    function loadTorus(scene: THREE.Scene): void {
         loadObject(
             'models/torus.obj',
             util.randomlyPick(['torus0.jpg', 'torus1.jpg'].map(x => 'models/' + x)),
@@ -177,8 +180,10 @@ namespace control {
                         .collect()
                 )
 
-        })
-        // stamen
+            })
+    }
+
+    function loadStamens(scene: THREE.Scene): void {
         loadObject('models/stamen.obj', 'models/stamen.png', (group: THREE.Group) => {
             const basicGroupHelper =
                 threeEx.GroupHelper.of(group)
@@ -206,7 +211,9 @@ namespace control {
                 )
             }
         })
-        // petal
+    }
+
+    function loadPetals(scene: THREE.Scene): void {
         loadObject(
             util.randomlyPick(['petal.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x)),
             util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.jpg'].map(x => 'models/' + x)),
@@ -228,8 +235,11 @@ namespace control {
                     // TODO: Add group to scene
                 }
 
-        })
-        // leaf 1
+            })
+    }
+
+    function loadLeaves(scene: THREE.Scene): void {
+        // leaf 0
         loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
             threeEx.GroupHelper.of(group)
                 .scale(0.1, 0.1, 0.1)
@@ -238,7 +248,7 @@ namespace control {
                 .rotateY(Math.PI * 0.8)
             // TODO: Add group to scene
         })
-        // leaf 2
+        // leaf 1
         loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
             threeEx.GroupHelper.of(group)
                 .scale(0.1, 0.1, 0.1)
@@ -246,6 +256,15 @@ namespace control {
                 .rotateX(Math.PI * 0.3)
             // TODO: Add group to scene
         })
+    }
+
+    function loadObjects(scene: THREE.Scene): void {
+        loadLand(scene)
+        loadStem(scene)
+        loadTorus(scene)
+        loadLeaves(scene)
+        loadPetals(scene)
+        loadLeaves(scene)
     }
 
     export function initialize(): void {
