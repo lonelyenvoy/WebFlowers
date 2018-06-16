@@ -68,6 +68,39 @@ namespace threeEx {
     }
 }
 
+namespace polyfills {
+    function dateNow() {
+        if (!Date.now)
+            Date.now = function() { return new Date().getTime() };
+    }
+
+    function requestAnimationFrame() {
+        const vendors = ['webkit', 'moz']
+        for (let i = 0; i < vendors.length && !window.requestAnimationFrame; ++i) {
+            const vp = vendors[i]
+            window.requestAnimationFrame = window[vp+'RequestAnimationFrame']
+            window.cancelAnimationFrame = (window[vp+'CancelAnimationFrame']
+                || window[vp+'CancelRequestAnimationFrame'])
+        }
+        if (/iP(ad|hone|od).*OS 6/.test(window.navigator.userAgent) // iOS6 is buggy
+            || !window.requestAnimationFrame || !window.cancelAnimationFrame) {
+            let lastTime = 0
+            window.requestAnimationFrame = function(callback) {
+                const now = Date.now()
+                const nextTime = Math.max(lastTime + 16, now)
+                return setTimeout(function() { callback(lastTime = nextTime); },
+                    nextTime - now)
+            }
+            window.cancelAnimationFrame = clearTimeout
+        }
+    }
+
+    export function install() {
+        dateNow()
+        requestAnimationFrame()
+    }
+}
+
 namespace control {
 
     function Renderer(): THREE.WebGLRenderer {
@@ -308,4 +341,5 @@ namespace control {
     }
 }
 
+polyfills.install()
 control.initialize()
