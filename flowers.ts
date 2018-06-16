@@ -1,8 +1,8 @@
 
 // main
-(() => {
+(async () => {
     polyfills.install()
-    control.initialize()
+    await control.initialize()
 })()
 
 namespace dom {
