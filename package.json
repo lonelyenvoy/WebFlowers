@@ -1,0 +1,15 @@
+{
+  "name": "webflowers",
+  "version": "1.0.0",
+  "description": "A web app showing a bunch of flowers",
+  "main": "index.html",
+  "dependencies": {
+    "@types/three": "^0.92.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "lonelyenvoy",
+  "license": "MIT"
+}
