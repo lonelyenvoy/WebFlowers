@@ -7,7 +7,7 @@
 
 namespace dom {
     export function canvas(): HTMLElement {
-        return document.getElementById('canvas-frame')
+        return <HTMLElement>document.getElementById('canvas-frame')
     }
 }
 
@@ -84,9 +84,9 @@ namespace polyfills {
         const vendors = ['webkit', 'moz']
         for (let i = 0; i < vendors.length && !window.requestAnimationFrame; ++i) {
             const vp = vendors[i]
-            window.requestAnimationFrame = window[vp+'RequestAnimationFrame']
-            window.cancelAnimationFrame = (window[vp+'CancelAnimationFrame']
-                || window[vp+'CancelRequestAnimationFrame'])
+            window.requestAnimationFrame = (window as any)[vp+'RequestAnimationFrame']
+            window.cancelAnimationFrame = ((window as any)[vp+'CancelAnimationFrame']
+                || (window as any)[vp+'CancelRequestAnimationFrame'])
         }
         if (/iP(ad|hone|od).*OS 6/.test(window.navigator.userAgent) // iOS6 is buggy
             || !window.requestAnimationFrame || !window.cancelAnimationFrame) {
@@ -144,14 +144,14 @@ namespace control {
 
     function OrbitControls(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer)
         : THREE.OrbitControls {
-        const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
-        orbitControls.enableDamping = true;
-        orbitControls.dampingFactor = 0.20;
-        orbitControls.enableZoom = true;
-        orbitControls.autoRotate = false;
-        orbitControls.minDistance  = 20;
-        orbitControls.maxDistance  = 2000;
-        orbitControls.enablePan = true;
+        const orbitControls = new THREE.OrbitControls(camera, renderer.domElement)
+        orbitControls.enableDamping = true
+        orbitControls.dampingFactor = 0.20
+        orbitControls.enableZoom = true
+        orbitControls.autoRotate = false
+        orbitControls.minDistance  = 20
+        orbitControls.maxDistance  = 2000
+        orbitControls.enablePan = true
         return orbitControls
     }
 
@@ -174,12 +174,12 @@ namespace control {
             modelUrl: string,
             modelTextureUrl: string,
             onSuccess: (group: THREE.Group) => void,
+            onError = (event: ErrorEvent): void => console.error(event.message),
             onProgress = (event: ProgressEvent): void => {
                 if (event.lengthComputable) {
                     console.log(Math.round(event.loaded / event.total * 100) + '% downloaded')
                 }
-            },
-            onError = (event: ErrorEvent): void => console.error(event.message)
+            }
         ): this {
             // load texture
             const textureLoader = new THREE.TextureLoader()
@@ -200,114 +200,163 @@ namespace control {
             return this
         }
 
-        loadLand(): this {
-            return this.loadObject('models/land.obj', 'models/land.jpg', (group: THREE.Group) => {
-                this.scene.add(threeEx.GroupHelper.of(group).scale(100, 100, 100).visualize().collect())
+        loadLand(): Promise<THREE.Group> {
+            return new Promise<THREE.Group>((resolve, reject) => {
+                this.loadObject('models/land.obj', 'models/land.jpg', (group: THREE.Group) => {
+                    const land: THREE.Group = threeEx.GroupHelper.of(group).scale(100, 100, 100).visualize().collect()
+                    this.scene.add(land)
+                    resolve(land)
+                }, reject)
             })
         }
 
-        loadStem(): this {
-            return this.loadObject('models/stem.obj', 'models/stem.jpg', (group: THREE.Group) => {
-                this.scene.add(threeEx.GroupHelper.of(group).scale(1, 0.1, 0.1).visualize().collect())
+        loadStem(): Promise<THREE.Group> {
+            return new Promise<THREE.Group>((resolve, reject) => {
+                this.loadObject('models/stem.obj', 'models/stem.jpg', (group: THREE.Group) => {
+                    const stem: THREE.Group = threeEx.GroupHelper.of(group).scale(1, 0.1, 0.1).visualize().collect()
+                    this.scene.add(stem)
+                    resolve(stem)
+                }, reject)
             })
         }
 
-        loadTorus(): this {
-            return this.loadObject(
-                'models/torus.obj',
-                util.randomlyPick(['torus0.jpg', 'torus1.jpg'].map(x => 'models/' + x)),
-                (group: THREE.Group) => {
-                    this.scene.add(
-                        threeEx.GroupHelper.of(group)
-                            .scale(0.01, 0.01, 0.01)
-                            .positioning(0.5, 29.5, 0)
-                            .rotateX(-15)
-                            .visualize()
-                            .collect()
-                    )
-
-                })
-        }
-
-        loadStamens(): this {
-            return this.loadObject('models/stamen.obj', 'models/stamen.png', (group: THREE.Group) => {
-                const basicGroupHelper =
-                    threeEx.GroupHelper.of(group)
-                        .scale(0.02, 0.02, 0.02)
-                        .positioning(0, 29.5, 0)
-                        .rotateX(0.9)
-                const positions = [
-                    [-0.5, 29.5, 0],
-                    [0, 29.5, 0],
-                    [1, 29.5, 0],
-                    [1.5, 29.5, 0],
-                    [-0.25, 30, -0.5],
-                    [0.5, 30, -0.5],
-                    [1.25, 30, -0.5],
-                    [-0.25, 29, 0.5],
-                    [0.5, 29, 0.5],
-                    [1.25, 29, 0.5],
-                ]
-                for (const position of positions) {
-                    this.scene.add(
-                        basicGroupHelper
-                            .clone()
-                            .positioning(position[0], position[1], position[2])
-                            .collect()
-                    )
-                }
+        loadTorus(): Promise<THREE.Group> {
+            return new Promise<THREE.Group>((resolve, reject) => {
+                this.loadObject(
+                    'models/torus.obj',
+                    util.randomlyPick(['torus0.jpg', 'torus1.jpg'].map(x => 'models/' + x)),
+                    (group: THREE.Group) => {
+                        const torus: THREE.Group =
+                            threeEx.GroupHelper.of(group)
+                                .scale(0.01, 0.01, 0.01)
+                                .positioning(0.5, 29.5, 0)
+                                .rotateX(-15)
+                                .visualize()
+                                .collect()
+                        this.scene.add(torus)
+                        resolve(torus)
+                    }, reject)
             })
+
         }
 
-        loadPetals(): this {
-            return this.loadObject(
-                util.randomlyPick(['petal.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x)),
-                util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.jpg'].map(x => 'models/' + x)),
-                (group: THREE.Group) => {
+        loadStamens(): Promise<THREE.Group[]> {
+            return new Promise<THREE.Group[]>((resolve, reject) => {
+                this.loadObject('models/stamen.obj', 'models/stamen.png', (group: THREE.Group) => {
                     const basicGroupHelper =
                         threeEx.GroupHelper.of(group)
-                            .scale(0.1, 0.1, 0.1)
-                            .positioning(1, 25, -1)
-                    const rotations = [
-                        [1.5, 0, 0],
-                        [1.7, 1, -0.6],
-                        [-0.7, (Math.PI / 3) * 2, 0.6],
-                        [-0.1, (Math.PI / 3) * 3, 0],
-                        [-0.9, (Math.PI / 3) * 4, -2],
-                        [1.7, (Math.PI / 3) * 5, 1.5]
+                            .scale(0.02, 0.02, 0.02)
+                            .positioning(0, 29.5, 0)
+                            .rotateX(0.9)
+                    const positions = [
+                        [-0.5, 29.5, 0],
+                        [0, 29.5, 0],
+                        [1, 29.5, 0],
+                        [1.5, 29.5, 0],
+                        [-0.25, 30, -0.5],
+                        [0.5, 30, -0.5],
+                        [1.25, 30, -0.5],
+                        [-0.25, 29, 0.5],
+                        [0.5, 29, 0.5],
+                        [1.25, 29, 0.5],
                     ]
-                    for (const rotation of rotations) {
-                        basicGroupHelper.clone().rotate(rotation[0], rotation[1], rotation[2])
-                        // TODO: Add group to scene
+                    const stamens: THREE.Group[] = []
+                    for (const position of positions) {
+                        stamens.push(
+                            basicGroupHelper
+                                .clone()
+                                .positioning(position[0], position[1], position[2])
+                                .collect()
+                        )
                     }
+                    for (const stamen of stamens) {
+                        this.scene.add(stamen)
+                    }
+                    resolve(stamens)
+                }, reject)
+            })
 
-                })
         }
 
-        loadLeaves(): this {
-            // leaf 0
-            this.loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
-                threeEx.GroupHelper.of(group)
-                    .scale(0.1, 0.1, 0.1)
-                    .positioning(0.5, 5, 0.5)
-                    .rotateX(-Math.PI * 0.4)
-                    .rotateY(Math.PI * 0.8)
-                // TODO: Add group to scene
+        loadPetals(): Promise<THREE.Group[]> {
+            return new Promise<THREE.Group[]>((resolve, reject) => {
+                this.loadObject(
+                    util.randomlyPick(['petal.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x)),
+                    util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.jpg'].map(x => 'models/' + x)),
+                    (group: THREE.Group) => {
+                        const basicGroupHelper =
+                            threeEx.GroupHelper.of(group)
+                                .scale(0.1, 0.1, 0.1)
+                                .positioning(1, 25, -1)
+                        const rotations = [
+                            [1.5, 0, 0],
+                            [1.7, 1, -0.6],
+                            [-0.7, (Math.PI / 3) * 2, 0.6],
+                            [-0.1, (Math.PI / 3) * 3, 0],
+                            [-0.9, (Math.PI / 3) * 4, -2],
+                            [1.7, (Math.PI / 3) * 5, 1.5]
+                        ]
+                        for (const rotation of rotations) {
+                            basicGroupHelper.clone().rotate(rotation[0], rotation[1], rotation[2])
+                            // TODO: Add group to scene
+                        }
+                        reject(new ErrorEvent('Not Implemented'))
+                    }, reject)
             })
-            // leaf 1
-            this.loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
-                threeEx.GroupHelper.of(group)
-                    .scale(0.1, 0.1, 0.1)
-                    .positioning(0.5, 23, -3.5)
-                    .rotateX(Math.PI * 0.3)
-                // TODO: Add group to scene
+        }
+
+        loadLeaves(): Promise<THREE.Group[]> {
+            return new Promise<THREE.Group[]>((resolve, reject) => {
+                // leaf 0
+                this.loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
+                    threeEx.GroupHelper.of(group)
+                        .scale(0.1, 0.1, 0.1)
+                        .positioning(0.5, 5, 0.5)
+                        .rotateX(-Math.PI * 0.4)
+                        .rotateY(Math.PI * 0.8)
+                    // TODO: Add group to scene
+                    reject(new ErrorEvent('Not Implemented'))
+                }, reject)
+                // leaf 1
+                this.loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
+                    threeEx.GroupHelper.of(group)
+                        .scale(0.1, 0.1, 0.1)
+                        .positioning(0.5, 23, -3.5)
+                        .rotateX(Math.PI * 0.3)
+                    // TODO: Add group to scene
+                    reject(new ErrorEvent('Not Implemented'))
+                }, reject)
+
             })
-            return this
         }
 
     }
 
-    export function initialize(): void {
+    function render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
+        const updateStem = () => {
+
+        }
+        const updateStamens = () => {
+
+        }
+        const updatePetals = () => {
+
+        }
+        const updateLeaves = () => {
+
+        }
+
+        const frame = () => {
+            updateStem()
+            updateStamens()
+            updatePetals()
+            updateLeaves()
+            renderer.render(scene, camera)
+        }
+        requestAnimationFrame(frame)
+    }
+
+    export async function initialize(): Promise<void> {
         // renderer
         const renderer: THREE.WebGLRenderer = Renderer()
         dom.canvas().appendChild(renderer.domElement)
@@ -336,14 +385,16 @@ namespace control {
         })
 
         // load objects
-        ObjectLoader.of(scene)
-            .loadLand()
-            .loadStem()
-            .loadTorus()
-            .loadLeaves()
-            .loadPetals()
-            .loadLeaves()
+        const loader: ObjectLoader = ObjectLoader.of(scene)
+        const land: THREE.Group = await loader.loadLand()
+        const stem: THREE.Group = await loader.loadStem()
+        const torus: THREE.Group = await loader.loadTorus()
+        const stamens: THREE.Group[] = await loader.loadStamens()
+        const petals: THREE.Group[] = await loader.loadPetals()
+        const leaves: THREE.Group[] = await loader.loadLeaves()
 
+        // render
+        render(renderer, scene, camera)
     }
 }
 
