@@ -1,28 +1,62 @@
+/**
+ * flowers.ts
+ * Controls the behavior of flowers.html
+ * @author lonelyenvoy <lonelyenvoy@gmail.com>
+ */
 
-// main
+/**
+ * Main entry point
+ */
 (async () => {
     polyfills.install()
     await control.initialize()
 })()
 
+/**
+ * Dom related operations
+ */
 namespace dom {
+    /**
+     * Get canvas div
+     * @returns canvas
+     */
     export function canvas(): HTMLElement {
         return <HTMLElement>document.getElementById('canvas-frame')
     }
 }
 
+/**
+ * General utils
+ */
 namespace util {
+    /**
+     * Get random double value in [a, b), or [0, a] if b is not given
+     * @param a - low bound
+     * @param b - high bound
+     * @returns random value
+     */
     export function random(a: number, b?: number): number {
         if (b === undefined) return Math.random() * a
         else return Math.random() * Math.abs(b - a) + Math.min(a, b)
     }
 
+    /**
+     * Get random item from an array
+     * @param items - items array
+     * @returns a random item
+     */
     export function randomlyPick(items: any[]): any {
         return items[Math.floor(random(items.length))]
     }
 }
 
+/**
+ * Functional Extensions for THREE.js
+ */
 namespace threeEx {
+    /**
+     * THREE.Group helper
+     */
     export class GroupHelper {
         private constructor(private group: THREE.Group) {}
         static of(group: THREE.Group): GroupHelper {
@@ -75,11 +109,20 @@ namespace threeEx {
 }
 
 namespace polyfills {
+    /**
+     * Polyfill for Date.now()
+     * @impure
+     */
     function dateNow() {
         if (!Date.now)
             Date.now = function() { return new Date().getTime() };
     }
 
+    /**
+     * Polyfill for window.requestAnimationFrame()
+     * @requires dateNow()
+     * @impure
+     */
     function requestAnimationFrame() {
         const vendors = ['webkit', 'moz']
         for (let i = 0; i < vendors.length && !window.requestAnimationFrame; ++i) {
@@ -101,12 +144,19 @@ namespace polyfills {
         }
     }
 
+    /**
+     * Install all polyfills
+     * @impure
+     */
     export function install() {
         dateNow()
         requestAnimationFrame()
     }
 }
 
+/**
+ * Main Control flow
+ */
 namespace control {
 
     function Renderer(): THREE.WebGLRenderer {
@@ -164,6 +214,9 @@ namespace control {
         )
     }
 
+    /**
+     * THREE.js Object loader
+     */
     class ObjectLoader {
         private constructor(private scene: THREE.Scene) {}
         static of(scene:THREE.Scene): ObjectLoader {
