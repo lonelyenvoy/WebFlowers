@@ -30,7 +30,7 @@ namespace dom {
  */
 namespace util {
     /**
-     * Get random double value in [a, b), or [0, a] if b is not given
+     * Get random double value in [a, b), or [0, a) if b is not given
      * @param a - low bound
      * @param b - high bound
      * @returns random value
