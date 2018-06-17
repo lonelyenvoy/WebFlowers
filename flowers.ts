@@ -31,9 +31,9 @@ namespace dom {
 namespace util {
     /**
      * Get random double value in [a, b), or [0, a) if b is not given
-     * @param a - low bound
-     * @param b - high bound
-     * @returns random value
+     * @param {number} a - low bound
+     * @param {number} b - high bound
+     * @returns {number} random value
      */
     export function random(a: number, b?: number): number {
         if (b === undefined) return Math.random() * a
@@ -42,8 +42,8 @@ namespace util {
 
     /**
      * Get random item from an array
-     * @param items - items array
-     * @returns a random item
+     * @param {any[]} items - items array
+     * @returns {any} a random item
      */
     export function randomlyPick(items: any[]): any {
         return items[Math.floor(random(items.length))]
@@ -218,6 +218,16 @@ namespace control {
      * THREE.js object loading utils
      */
     namespace objectLoading {
+
+        /**
+         * General object loading function
+         * @param {string} modelUrl - Url of the model to be load
+         * @param {string} modelTextureUrl - Url of the texture to be load
+         * @param {(group: Group) => void} onSuccess - successful callback
+         * @param {(event: ErrorEvent) => void} onError - error callback
+         * @param {(event: ProgressEvent) => void} onProgress - progress reporting callback
+         * @expectsToBeWrappedInPromise
+         */
         function loadObject(
             modelUrl: string,
             modelTextureUrl: string,
@@ -247,6 +257,10 @@ namespace control {
             }, onProgress, onError)
         }
 
+        /**
+         * Load land object
+         * @returns {Promise<Group>} land object in Promise
+         */
         export function loadLand(): Promise<THREE.Group> {
             return new Promise<THREE.Group>((resolve, reject) => {
                 loadObject('models/land.obj', 'models/land.jpg', (group: THREE.Group) => {
@@ -255,6 +269,10 @@ namespace control {
             })
         }
 
+        /**
+         * Load stem object
+         * @returns {Promise<Group>} stem object in Promise
+         */
         export function loadStem(): Promise<THREE.Group> {
             return new Promise<THREE.Group>((resolve, reject) => {
                 loadObject('models/stem.obj', 'models/stem.jpg', (group: THREE.Group) => {
@@ -263,6 +281,10 @@ namespace control {
             })
         }
 
+        /**
+         * Load torus object
+         * @returns {Promise<Group>} torus object in Promise
+         */
         export function loadTorus(): Promise<THREE.Group> {
             return new Promise<THREE.Group>((resolve, reject) => {
                 loadObject(
@@ -282,6 +304,10 @@ namespace control {
 
         }
 
+        /**
+         * Load stamens object
+         * @returns {Promise<Group[]>} stamens object in Promise
+         */
         export function loadStamens(): Promise<THREE.Group[]> {
             return new Promise<THREE.Group[]>((resolve, reject) => {
                 loadObject('models/stamen.obj', 'models/stamen.png', (group: THREE.Group) => {
@@ -317,6 +343,11 @@ namespace control {
 
         }
 
+        /**
+         * Load petals objects
+         * @returns {Promise<Group[]>} petals objects in Promise
+         * @unfinished
+         */
         export function loadPetals(): Promise<THREE.Group[]> {
             return new Promise<THREE.Group[]>((resolve, reject) => {
                 loadObject(
@@ -344,6 +375,11 @@ namespace control {
             })
         }
 
+        /**
+         * Load leaves objects
+         * @returns {Promise<Group[]>} leaves objects in Promise
+         * @unfinished
+         */
         export function loadLeaves(): Promise<THREE.Group[]> {
             return new Promise<THREE.Group[]>((resolve, reject) => {
                 // leaf 0
@@ -395,6 +431,11 @@ namespace control {
         requestAnimationFrame(frame)
     }
 
+    /**
+     * Initialize everything in scene
+     * @returns {Promise<void>} nothing
+     * @impure
+     */
     export async function initialize(): Promise<void> {
         // renderer
         const renderer: THREE.WebGLRenderer = Renderer()
