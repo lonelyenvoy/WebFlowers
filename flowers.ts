@@ -215,15 +215,10 @@ namespace control {
     }
 
     /**
-     * THREE.js Object loader
+     * THREE.js object loading utils
      */
-    class ObjectLoader {
-        private constructor(private scene: THREE.Scene) {}
-        static of(scene:THREE.Scene): ObjectLoader {
-            return new ObjectLoader(scene)
-        }
-
-        private loadObject(
+    namespace objectLoading {
+        function loadObject(
             modelUrl: string,
             modelTextureUrl: string,
             onSuccess: (group: THREE.Group) => void,
@@ -233,7 +228,7 @@ namespace control {
                     console.log(Math.round(event.loaded / event.total * 100) + '% downloaded')
                 }
             }
-        ): this {
+        ): void {
             // load texture
             const textureLoader = new THREE.TextureLoader()
             const map = textureLoader.load(modelTextureUrl)
@@ -250,52 +245,46 @@ namespace control {
                 })
                 onSuccess(group)
             }, onProgress, onError)
-            return this
         }
 
-        loadLand(): Promise<THREE.Group> {
+        export function loadLand(): Promise<THREE.Group> {
             return new Promise<THREE.Group>((resolve, reject) => {
-                this.loadObject('models/land.obj', 'models/land.jpg', (group: THREE.Group) => {
-                    const land: THREE.Group = threeEx.GroupHelper.of(group).scale(100, 100, 100).visualize().collect()
-                    this.scene.add(land)
-                    resolve(land)
+                loadObject('models/land.obj', 'models/land.jpg', (group: THREE.Group) => {
+                    resolve(threeEx.GroupHelper.of(group).scale(100, 100, 100).visualize().collect())
                 }, reject)
             })
         }
 
-        loadStem(): Promise<THREE.Group> {
+        export function loadStem(): Promise<THREE.Group> {
             return new Promise<THREE.Group>((resolve, reject) => {
-                this.loadObject('models/stem.obj', 'models/stem.jpg', (group: THREE.Group) => {
-                    const stem: THREE.Group = threeEx.GroupHelper.of(group).scale(1, 0.1, 0.1).visualize().collect()
-                    this.scene.add(stem)
-                    resolve(stem)
+                loadObject('models/stem.obj', 'models/stem.jpg', (group: THREE.Group) => {
+                    resolve(threeEx.GroupHelper.of(group).scale(1, 0.1, 0.1).visualize().collect())
                 }, reject)
             })
         }
 
-        loadTorus(): Promise<THREE.Group> {
+        export function loadTorus(): Promise<THREE.Group> {
             return new Promise<THREE.Group>((resolve, reject) => {
-                this.loadObject(
+                loadObject(
                     'models/torus.obj',
                     util.randomlyPick(['torus0.jpg', 'torus1.jpg'].map(x => 'models/' + x)),
                     (group: THREE.Group) => {
-                        const torus: THREE.Group =
+                        resolve(
                             threeEx.GroupHelper.of(group)
                                 .scale(0.01, 0.01, 0.01)
                                 .positioning(0.5, 29.5, 0)
                                 .rotateX(-15)
                                 .visualize()
                                 .collect()
-                        this.scene.add(torus)
-                        resolve(torus)
+                        )
                     }, reject)
             })
 
         }
 
-        loadStamens(): Promise<THREE.Group[]> {
+        export function loadStamens(): Promise<THREE.Group[]> {
             return new Promise<THREE.Group[]>((resolve, reject) => {
-                this.loadObject('models/stamen.obj', 'models/stamen.png', (group: THREE.Group) => {
+                loadObject('models/stamen.obj', 'models/stamen.png', (group: THREE.Group) => {
                     const basicGroupHelper =
                         threeEx.GroupHelper.of(group)
                             .scale(0.02, 0.02, 0.02)
@@ -322,18 +311,15 @@ namespace control {
                                 .collect()
                         )
                     }
-                    for (const stamen of stamens) {
-                        this.scene.add(stamen)
-                    }
                     resolve(stamens)
                 }, reject)
             })
 
         }
 
-        loadPetals(): Promise<THREE.Group[]> {
+        export function loadPetals(): Promise<THREE.Group[]> {
             return new Promise<THREE.Group[]>((resolve, reject) => {
-                this.loadObject(
+                loadObject(
                     util.randomlyPick(['petal.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x)),
                     util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.jpg'].map(x => 'models/' + x)),
                     (group: THREE.Group) => {
@@ -358,10 +344,10 @@ namespace control {
             })
         }
 
-        loadLeaves(): Promise<THREE.Group[]> {
+        export function loadLeaves(): Promise<THREE.Group[]> {
             return new Promise<THREE.Group[]>((resolve, reject) => {
                 // leaf 0
-                this.loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
+                loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
                     threeEx.GroupHelper.of(group)
                         .scale(0.1, 0.1, 0.1)
                         .positioning(0.5, 5, 0.5)
@@ -371,7 +357,7 @@ namespace control {
                     reject(new ErrorEvent('Not Implemented'))
                 }, reject)
                 // leaf 1
-                this.loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
+                loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
                     threeEx.GroupHelper.of(group)
                         .scale(0.1, 0.1, 0.1)
                         .positioning(0.5, 23, -3.5)
@@ -438,13 +424,20 @@ namespace control {
         })
 
         // load objects
-        const loader: ObjectLoader = ObjectLoader.of(scene)
-        const land: THREE.Group = await loader.loadLand()
-        const stem: THREE.Group = await loader.loadStem()
-        const torus: THREE.Group = await loader.loadTorus()
-        const stamens: THREE.Group[] = await loader.loadStamens()
-        const petals: THREE.Group[] = await loader.loadPetals()
-        const leaves: THREE.Group[] = await loader.loadLeaves()
+        const land: THREE.Group = await objectLoading.loadLand()
+        const stem: THREE.Group = await objectLoading.loadStem()
+        const torus: THREE.Group = await objectLoading.loadTorus()
+        const stamens: THREE.Group[] = await objectLoading.loadStamens()
+        const petals: THREE.Group[] = await objectLoading.loadPetals()
+        const leaves: THREE.Group[] = await objectLoading.loadLeaves()
+
+        // add objects to scene
+        scene.add(land)
+        scene.add(stem)
+        scene.add(torus)
+        for (const stamen of stamens) {
+            scene.add(stamen)
+        }
 
         // render
         render(renderer, scene, camera)
