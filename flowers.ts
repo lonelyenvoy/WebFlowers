@@ -407,28 +407,200 @@ namespace control {
 
     }
 
-    function render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
-        const updateStem = () => {
+    /**
+     * Rendering utils
+     */
+    namespace rendering {
 
-        }
-        const updateStamens = () => {
+        /**
+         * Used to check whether it's necessary to repaint the objects in scene
+         */
+        class ValidityChecker {
+            private constructor(private stem: THREE.Group,
+                                private torus: THREE.Group,
+                                private stamens: THREE.Group[],
+                                private petals: THREE.Group[],
+                                private leaves: THREE.Group[]) {}
+            static of(stem: THREE.Group,
+                      torus: THREE.Group,
+                      stamens: THREE.Group[],
+                      petals: THREE.Group[],
+                      leaves: THREE.Group[]): ValidityChecker {
+                return new ValidityChecker(stem, torus, stamens, petals, leaves)
+            }
 
-        }
-        const updatePetals = () => {
+            stemInvalidated(): boolean {
+                return this.stem.scale.y <= 1
+            }
 
-        }
-        const updateLeaves = () => {
+            torusOrStamensInvalidated(): boolean {
+                return this.stem.scale.y >= 0.7
+            }
 
+            petalsInvalidated(): boolean {
+                return this.stem.scale.y >= 0.61 && this.petals[0].position.y <= 41
+            }
+
+            leavesInvalidated(): boolean {
+                return this.stem.scale.y >= 0.3 && this.leaves[0].scale.x <= 1
+            }
         }
 
-        const frame = () => {
-            updateStem()
-            updateStamens()
-            updatePetals()
-            updateLeaves()
-            renderer.render(scene, camera)
+        /**
+         * Update stem object
+         * @param {Group} stem - stem object
+         * @impure
+         */
+        function updateStem(stem: THREE.Group): void {
+            if (stem.scale.y <= 1) {
+                stem.scale.y += 0.001
+            }
+            if (stem.scale.z <= 1) {
+                stem.scale.z += 0.001
+            }
         }
-        requestAnimationFrame(frame)
+
+        /**
+         * Update torus object and stamen objects
+         * @param {Group} torus - torus object
+         * @param {Group[]} stamens - stamen objects
+         * @impure
+         */
+        function updateTorusAndStamens(torus: THREE.Group, stamens: THREE.Group[]): void {
+            if (torus.scale.x <= 0.1) {
+                torus.scale.x += 0.00035
+                torus.scale.y += 0.00025
+                torus.scale.z += 0.00035
+            }
+            if (torus.position.y <= 41.5) {
+                torus.position.y += 0.04
+                for (const stamen of stamens) {
+                    stamen.position.y += 0.04
+                }
+            }
+            if (stamens[0].scale.x <= 0.12) {
+                for (const stamen of stamens) {
+                    stamen.scale.x += 0.0003
+                    stamen.scale.y += 0.0003
+                    stamen.scale.z += 0.0003
+                }
+            }
+        }
+
+        /**
+         * Update petal objects
+         * @param {Group[]} petals - petal objects
+         * @impure
+         */
+        function updatePetals(petals: THREE.Group[]): void {
+            if (petals[0].position.y <= 41) {
+                for (const petal of petals) {
+                    petal.position.y += 0.042
+                }
+            }
+            if (petals[0].scale.x <= 1) {
+                for (const petal of petals) {
+                    petal.scale.x += 0.004
+                    petal.scale.y += 0.004
+                    petal.scale.z += 0.004
+                }
+            }
+
+            //petal 0
+            if(petals[0].rotation.x >= 0.7)
+                petals[0].rotation.x -= 0.003
+            //petal 1
+            if(petals[1].rotation.x >= 0.7)
+                petals[1].rotation.x -= 0.003
+            if(petals[1].rotation.z <=0)
+                petals[1].rotation.z += 0.003
+            //petal 2
+            if(petals[2].rotation.x <= 0.7)
+                petals[2].rotation.x += 0.005
+            if(petals[2].rotation.z >= 0)
+                petals[2].rotation.z -= 0.006
+            //petal 3
+            if(petals[3].rotation.x <= 0.7)
+                petals[3].rotation.x += 0.003
+            //petal 4
+            if(petals[4].rotation.x <= 0.7)
+                petals[4].rotation.x += 0.005
+            if(petals[4].rotation.z <= 0)
+                petals[4].rotation.z += 0.0065
+            //petal 5
+            if(petals[5].rotation.x >= 0.7)
+                petals[5].rotation.x -= 0.005
+            if(petals[5].rotation.z >= 0)
+                petals[5].rotation.z -= 0.0065
+        }
+
+        /**
+         * Update leaf objects
+         * @param {Group[]} leaves - leaf objects
+         * @impure
+         */
+        function updateLeaves(leaves: THREE.Group[]): void {
+            // leaf 0
+            if (leaves[0].position.y <= 10) {
+                leaves[0].position.y += 0.01
+            }
+            if (leaves[0].scale.x <= 1) {
+                leaves[0].scale.x += 0.004
+                leaves[0].scale.y += 0.004
+                leaves[0].scale.z += 0.002
+            }
+            if (leaves[0].rotation.x <= 0) {
+                leaves[0].rotation.x += 0.0015
+            }
+
+            // leaf 1
+            if (leaves[1].position.y <= 31) {
+                leaves[1].position.y += 0.02
+            }
+            if (leaves[1].scale.x <= 1) {
+                leaves[1].scale.x += 0.004
+                leaves[1].scale.y += 0.004
+                leaves[1].scale.z += 0.002
+            }
+            if (leaves[1].rotation.x >= 0) {
+                leaves[1].rotation.x -= 0.0015
+            }
+        }
+
+        /**
+         * Initiate the process of updating objects and rendering the scene
+         * @param {WebGLRenderer} renderer - renderer
+         * @param {Scene} scene - scene
+         * @param {PerspectiveCamera} camera - camera
+         * @param {Group} stem - stem object
+         * @param {Group} torus - torus object
+         * @param {Group[]} stamens - stamen objects
+         * @param {Group[]} petals - petal objects
+         * @param {Group[]} leaves - leaf objects
+         * @impure
+         */
+        export function render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera,
+                        stem: THREE.Group, torus: THREE.Group,
+                        stamens: THREE.Group[], petals: THREE.Group[], leaves: THREE.Group[]): void {
+            const checker: ValidityChecker = ValidityChecker.of(stem, torus, stamens, petals, leaves)
+
+            const frame = (): void => {
+                if (checker.stemInvalidated()) {
+                    updateStem(stem)
+                }
+                if (checker.torusOrStamensInvalidated()) {
+                    updateTorusAndStamens(torus, stamens)
+                }
+                if (checker.petalsInvalidated()) {
+                    updatePetals(petals)
+                }
+                if (checker.leavesInvalidated()) {
+                    updateLeaves(leaves)
+                }
+                renderer.render(scene, camera)
+            }
+            requestAnimationFrame(frame)
+        }
     }
 
     /**
@@ -481,7 +653,7 @@ namespace control {
         }
 
         // render
-        render(renderer, scene, camera)
+        rendering.render(renderer, scene, camera, stem, torus, stamens, petals, leaves)
     }
 }
 
