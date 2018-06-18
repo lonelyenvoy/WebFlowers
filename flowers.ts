@@ -338,13 +338,12 @@ namespace control {
         /**
          * Load petals objects
          * @returns {Promise<Group[]>} petals objects in Promise
-         * @unfinished
          */
         export function loadPetals(): Promise<THREE.Group[]> {
             return new Promise<THREE.Group[]>((resolve, reject) => {
                 loadObject(
-                    util.randomlyPick(['petal.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x)),
-                    util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.jpg'].map(x => 'models/' + x)),
+                    util.randomlyPick(['petal0.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x)),
+                    util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.png'].map(x => 'models/' + x)),
                     (group: THREE.Group) => {
                         const basicGroupHelper =
                             threeEx.GroupHelper.of(group)
@@ -358,11 +357,16 @@ namespace control {
                             [-0.9, (Math.PI / 3) * 4, -2],
                             [1.7, (Math.PI / 3) * 5, 1.5]
                         ]
+                        const petals: THREE.Group[] = []
                         for (const rotation of rotations) {
-                            basicGroupHelper.clone().rotate(rotation[0], rotation[1], rotation[2])
-                            // TODO: Add group to scene
+                            petals.push(
+                                basicGroupHelper
+                                    .clone()
+                                    .rotate(rotation[0], rotation[1], rotation[2])
+                                    .collect()
+                            )
                         }
-                        reject(new ErrorEvent('Not Implemented'))
+                        resolve(petals)
                     }, reject)
             })
         }
@@ -370,30 +374,32 @@ namespace control {
         /**
          * Load leaves objects
          * @returns {Promise<Group[]>} leaves objects in Promise
-         * @unfinished
          */
         export function loadLeaves(): Promise<THREE.Group[]> {
             return new Promise<THREE.Group[]>((resolve, reject) => {
+                const leaves: THREE.Group[] = []
                 // leaf 0
                 loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
-                    threeEx.GroupHelper.of(group)
-                        .scale(0.1, 0.1, 0.1)
-                        .positioning(0.5, 5, 0.5)
-                        .rotateX(-Math.PI * 0.4)
-                        .rotateY(Math.PI * 0.8)
-                    // TODO: Add group to scene
-                    reject(new ErrorEvent('Not Implemented'))
+                    leaves.push(
+                        threeEx.GroupHelper.of(group)
+                            .scale(0.1, 0.1, 0.1)
+                            .positioning(0.5, 5, 0.5)
+                            .rotateX(-Math.PI * 0.4)
+                            .rotateY(Math.PI * 0.8)
+                            .collect()
+                    )
                 }, reject)
                 // leaf 1
                 loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
-                    threeEx.GroupHelper.of(group)
-                        .scale(0.1, 0.1, 0.1)
-                        .positioning(0.5, 23, -3.5)
-                        .rotateX(Math.PI * 0.3)
-                    // TODO: Add group to scene
-                    reject(new ErrorEvent('Not Implemented'))
+                    leaves.push(
+                        threeEx.GroupHelper.of(group)
+                            .scale(0.1, 0.1, 0.1)
+                            .positioning(0.5, 23, -3.5)
+                            .rotateX(Math.PI * 0.3)
+                            .collect()
+                    )
                 }, reject)
-
+                resolve(leaves)
             })
         }
 
@@ -574,9 +580,9 @@ namespace control {
         export function render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera,
                         stem: THREE.Group, torus: THREE.Group,
                         stamens: THREE.Group[], petals: THREE.Group[], leaves: THREE.Group[]): void {
-            const checker: ValidityChecker = ValidityChecker.of(stem, torus, stamens, petals, leaves)
+            const checker: ValidityChecker = ValidityChecker.of(stem, torus, stamens, petals, leaves);
 
-            const frame = (): void => {
+            (function frame () {
                 if (checker.stemInvalidated()) {
                     updateStem(stem)
                 }
@@ -590,8 +596,8 @@ namespace control {
                     updateLeaves(leaves)
                 }
                 renderer.render(scene, camera)
-            }
-            requestAnimationFrame(frame)
+                requestAnimationFrame(frame)
+            })()
         }
     }
 
@@ -623,10 +629,12 @@ namespace control {
 
         // resize event
         window.addEventListener('resize', () => {
-            camera.aspect = dom.canvas().clientWidth / dom.canvas().clientHeight
+            camera.aspect = window.innerWidth / window.innerHeight
             camera.updateProjectionMatrix()
-            renderer.setSize(dom.canvas().clientWidth, dom.canvas().clientHeight)
+            renderer.setSize(window.innerWidth, window.innerHeight)
         })
+        // dispatch resize event
+        window.dispatchEvent(new Event('resize'))
 
         // load objects
         const land: THREE.Group = await objectLoading.loadLand()
@@ -642,6 +650,12 @@ namespace control {
         scene.add(torus)
         for (const stamen of stamens) {
             scene.add(stamen)
+        }
+        for (const petal of petals) {
+            scene.add(petal)
+        }
+        for (const leaf of leaves) {
+            scene.add(leaf)
         }
 
         // render
