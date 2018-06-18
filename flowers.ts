@@ -5,14 +5,6 @@
  */
 
 /**
- * Main entry point
- */
-(async () => {
-    polyfills.install()
-    await control.initialize()
-})()
-
-/**
  * Dom related operations
  */
 namespace dom {
@@ -110,7 +102,7 @@ namespace threeEx {
 
 namespace polyfills {
     /**
-     * Polyfill for Date.now()
+     * Polyfill for Date.now
      * @impure
      */
     function dateNow() {
@@ -119,7 +111,7 @@ namespace polyfills {
     }
 
     /**
-     * Polyfill for window.requestAnimationFrame()
+     * Polyfill for window.requestAnimationFrame
      * @requires dateNow()
      * @impure
      */
@@ -657,3 +649,10 @@ namespace control {
     }
 }
 
+/**
+ * Main entry point
+ */
+(async () => {
+    polyfills.install()
+    await control.initialize()
+})()
