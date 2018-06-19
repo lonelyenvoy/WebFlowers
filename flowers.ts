@@ -5,6 +5,14 @@
  */
 
 /**
+ * App related constants
+ */
+namespace constants {
+    export const minLeaves = 1
+    export const maxLeaves = 4
+}
+
+/**
  * Dom related operations
  */
 namespace dom {
@@ -22,6 +30,15 @@ namespace dom {
  */
 namespace util {
     /**
+     * Generate python-like range
+     * @param {number} bound - upper bound of the range
+     * @returns {number[]} result, for example [0, 1, 2, 3, 4]
+     */
+    export function range(bound: number): number[] {
+        return Array.from(Array(bound).keys())
+    }
+
+    /**
      * Get random double value in [a, b), or [0, a) if b is not given
      * @param {number} a - low bound
      * @param {number} b - high bound
@@ -34,11 +51,46 @@ namespace util {
 
     /**
      * Get random item from an array
-     * @param {any[]} items - items array
-     * @returns {any} a random item
+     * @param items - items array
+     * @returns a random item
      */
     export function randomlyPick(items: any[]): any {
         return items[Math.floor(random(items.length))]
+    }
+
+    /**
+     * Generate random boolean array
+     * @param {number} length - the length of the array
+     * @returns {boolean[]} result, for example [true, true, false]
+     */
+    export function randomBooleanArray(length: number): boolean[] {
+        const array = []
+        for (const _ of range(length)) {
+            array.push(Math.round(Math.random()) === 1)
+        }
+        return array
+    }
+
+    /**
+     * Do AND-operation on arrays
+     * @param {boolean[]} arrays - candidate arrays
+     * @returns {boolean[]}
+     * @example
+     * > andBooleanArrays([true, false, true], [false, true, false])
+     * > [false, false, true]
+     */
+    export function andBooleanArrays(...arrays: boolean[][]): boolean[] {
+        if (arrays.length === 0) return []
+        const result: boolean[] = []
+        for (const _ of range(arrays[0].length)) {
+            result.push(true)
+        }
+        arrays.map((array) => {
+            array.map((item, index) => {
+                if (!item) result[index] = false
+            })
+        })
+        return result
     }
 }
 
@@ -364,21 +416,49 @@ namespace control {
          */
         export async function loadLeaves(): Promise<THREE.Group[]> {
             const leaf: THREE.Group = await loadObject('models/leaf.obj', 'models/stem.jpg')
-            const basicGroupHelper = threeEx.GroupHelper.of(leaf)
+            const basicGroupHelper =
+                threeEx.GroupHelper.of(leaf)
+                    .scale(0.1, 0.1, 0.1)
+                    .hide()
+            const getXRandomRotation = () => Math.PI * util.random(-0.5, 0.5)
+            const getYRandomRotation = () => Math.PI * util.random(-1, 1)
             return [
                 basicGroupHelper
                     .clone()
-                    .scale(0.1, 0.1, 0.1)
                     .positioning(0.5, 5, 0.5)
-                    .rotateX(-Math.PI * 0.4)
-                    .rotateY(Math.PI * 0.8)
+                    .rotateX(getXRandomRotation())
+                    .rotateY(getYRandomRotation())
                     .collect(),
                 basicGroupHelper
                     .clone()
-                    .scale(0.1, 0.1, 0.1)
+                    .positioning(0.5, 7, -0.25)
+                    .rotateX(getXRandomRotation())
+                    .rotateY(getYRandomRotation())
+                    .collect(),
+                basicGroupHelper
+                    .clone()
+                    .positioning(0.5, 10, -0.5)
+                    .rotateX(getXRandomRotation())
+                    .rotateY(getYRandomRotation())
+                    .collect(),
+                basicGroupHelper
+                    .clone()
+                    .positioning(0.5, 15, -1.75)
+                    .rotateX(getXRandomRotation())
+                    .rotateY(getYRandomRotation())
+                    .collect(),
+                basicGroupHelper
+                    .clone()
+                    .positioning(0.75, 19, -2.75)
+                    .rotateX(getXRandomRotation())
+                    .rotateY(getYRandomRotation())
+                    .collect(),
+                basicGroupHelper
+                    .clone()
                     .positioning(0.5, 23, -3.5)
-                    .rotateX(Math.PI * 0.3)
-                    .collect()
+                    .rotateX(getXRandomRotation())
+                    .rotateY(getYRandomRotation())
+                    .collect(),
             ]
         }
 
@@ -397,7 +477,16 @@ namespace control {
                                 private torus: THREE.Group,
                                 private stamens: THREE.Group[],
                                 private petals: THREE.Group[],
-                                private leaves: THREE.Group[]) {}
+                                private leaves: THREE.Group[]) {
+                this.leavesLottery = util.randomBooleanArray(this.leaves.length)
+                // restrict the number of leaves to a limited range
+                let trues: number
+                while (
+                    (trues = this.leavesLottery.filter(x => x === true).length) < constants.minLeaves
+                    || trues > constants.maxLeaves) {
+                    this.leavesLottery[util.random(0, this.leavesLottery.length)] = trues < constants.minLeaves
+                }
+            }
             static of(stem: THREE.Group,
                       torus: THREE.Group,
                       stamens: THREE.Group[],
@@ -405,6 +494,11 @@ namespace control {
                       leaves: THREE.Group[]): ValidityChecker {
                 return new ValidityChecker(stem, torus, stamens, petals, leaves)
             }
+
+            /**
+             * Indicate whether each leaf will be shown
+             */
+            private readonly leavesLottery: boolean[]
 
             stemInvalidated(): boolean {
                 return this.stem.scale.y <= 1
@@ -418,8 +512,15 @@ namespace control {
                 return this.stem.scale.y >= 0.61 && this.petals[0].position.y <= 41
             }
 
-            leavesInvalidated(): boolean {
-                return this.stem.scale.y >= 0.3
+            leavesInvalidities(): boolean[] {
+                return util.andBooleanArrays(this.leavesLottery, [
+                    this.stem.scale.y >= 0.3 && this.leaves[0].position.y <= 10,
+                    this.stem.scale.y >= 0.4 && this.leaves[1].position.y <= 15,
+                    this.stem.scale.y >= 0.45 && this.leaves[2].position.y <= 20,
+                    this.stem.scale.y >= 0.52 && this.leaves[3].position.y <= 24,
+                    this.stem.scale.y >= 0.55 && this.leaves[4].position.y <= 27,
+                    this.stem.scale.y >= 0.6 && this.leaves[5].position.y <= 31,
+                ])
             }
         }
 
@@ -514,33 +615,31 @@ namespace control {
         /**
          * Update leaf objects
          * @param {Group[]} leaves - leaf objects
+         * @param {boolean[]} invalidities - the invalidity of each leaf
          * @impure
          */
-        function updateLeaves(leaves: THREE.Group[]): void {
-            // leaf 0
-            if (leaves[0].position.y <= 10) {
-                leaves[0].position.y += 0.01
-            }
-            if (leaves[0].scale.x <= 1) {
-                leaves[0].scale.x += 0.004
-                leaves[0].scale.y += 0.004
-                leaves[0].scale.z += 0.002
-            }
-            if (leaves[0].rotation.x <= 0) {
-                leaves[0].rotation.x += 0.0015
-            }
-
-            // leaf 1
-            if (leaves[1].position.y <= 31) {
-                leaves[1].position.y += 0.02
-            }
-            if (leaves[1].scale.x <= 1) {
-                leaves[1].scale.x += 0.004
-                leaves[1].scale.y += 0.004
-                leaves[1].scale.z += 0.002
-            }
-            if (leaves[1].rotation.x >= 0) {
-                leaves[1].rotation.x -= 0.0015
+        function updateLeaves(leaves: THREE.Group[], invalidities: boolean[]): void {
+            for (let i = 0; i < leaves.length; i++) {
+                const leaf: THREE.Group = leaves[i]
+                const invalidated: boolean = invalidities[i]
+                if (invalidated) {
+                    // show
+                    leaf.visible = true
+                    // positioning
+                    leaf.position.y += 0.015
+                    // scale
+                    if (leaf.scale.x <= 1) {
+                        leaf.scale.x += 0.004
+                        leaf.scale.y += 0.004
+                        leaf.scale.z += 0.002
+                    }
+                    // rotate
+                    if (leaf.rotation.x <= util.random(-Math.PI * 0.2,-0.0015)) { // rotate positively
+                        leaf.rotation.x += 0.0015
+                    } else if (leaf.rotation.x >= util.random(0.0015, Math.PI * 0.2)) { // rotate negatively
+                        leaf.rotation.x -= 0.0015
+                    }
+                }
             }
         }
 
@@ -571,9 +670,7 @@ namespace control {
                 if (checker.petalsInvalidated()) {
                     updatePetals(petals)
                 }
-                if (checker.leavesInvalidated()) {
-                    updateLeaves(leaves)
-                }
+                updateLeaves(leaves, checker.leavesInvalidities())
                 renderer.render(scene, camera)
                 requestAnimationFrame(frame)
             })()
