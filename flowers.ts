@@ -215,192 +215,162 @@ namespace control {
          * General object loading function
          * @param {string} modelUrl - Url of the model to be load
          * @param {string} modelTextureUrl - Url of the texture to be load
-         * @param {(group: Group) => void} onSuccess - successful callback
-         * @param {(event: ErrorEvent) => void} onError - error callback
          * @param {(event: ProgressEvent) => void} onProgress - progress reporting callback
-         * @expectsToBeWrappedInPromise
          */
         function loadObject(
             modelUrl: string,
             modelTextureUrl: string,
-            onSuccess: (group: THREE.Group) => void,
-            onError = (event: ErrorEvent): void => console.error(event.message),
             onProgress = (event: ProgressEvent): void => {
                 if (event.lengthComputable) {
                     console.log(Math.round(event.loaded / event.total * 100) + '% downloaded')
                 }
             }
-        ): void {
-            // load texture
-            const textureLoader = new THREE.TextureLoader()
-            const map = textureLoader.load(modelTextureUrl)
-            // load obj
-            const objLoader = new THREE.OBJLoader()
-            objLoader.load(modelUrl, (object) => {
-                const group = new THREE.Group()
-                object.traverse((child) => {
-                    if (child instanceof THREE.Mesh){
-                        child.material = new THREE.MeshLambertMaterial({map: map})
-                        child.material.side = THREE.DoubleSide
-                        group.add(child.clone())
-                    }
-                })
-                onSuccess(group)
-            }, onProgress, onError)
+        ): Promise<THREE.Group> {
+            return new Promise<THREE.Group>((resolve, reject) => {
+                // load texture
+                const textureLoader = new THREE.TextureLoader()
+                const map = textureLoader.load(modelTextureUrl)
+                // load obj
+                const objLoader = new THREE.OBJLoader()
+                objLoader.load(modelUrl, (object) => {
+                    const group = new THREE.Group()
+                    object.traverse((child) => {
+                        if (child instanceof THREE.Mesh){
+                            child.material = new THREE.MeshLambertMaterial({map: map})
+                            child.material.side = THREE.DoubleSide
+                            group.add(child.clone())
+                        }
+                    })
+                    resolve(group)
+                }, onProgress, (event: ErrorEvent) => reject(event))
+            })
         }
 
         /**
          * Load land object
          * @returns {Promise<Group>} land object in Promise
          */
-        export function loadLand(): Promise<THREE.Group> {
-            return new Promise<THREE.Group>((resolve, reject) => {
-                loadObject('models/land.obj', 'models/land.jpg', (group: THREE.Group) => {
-                    resolve(threeEx.GroupHelper.of(group).scale(100, 100, 100).visualize().collect())
-                }, reject)
-            })
+        export async function loadLand(): Promise<THREE.Group> {
+            const land: THREE.Group = await loadObject('models/land.obj', 'models/land.jpg')
+            return threeEx.GroupHelper.of(land).scale(100, 100, 100).visualize().collect()
         }
 
         /**
          * Load stem object
          * @returns {Promise<Group>} stem object in Promise
          */
-        export function loadStem(): Promise<THREE.Group> {
-            return new Promise<THREE.Group>((resolve, reject) => {
-                loadObject('models/stem.obj', 'models/stem.jpg', (group: THREE.Group) => {
-                    resolve(threeEx.GroupHelper.of(group).scale(1, 0.1, 0.1).visualize().collect())
-                }, reject)
-            })
+        export async function loadStem(): Promise<THREE.Group> {
+            const stem: THREE.Group = await loadObject('models/stem.obj', 'models/stem.jpg')
+            return threeEx.GroupHelper.of(stem).scale(1, 0.1, 0.1).visualize().collect()
         }
 
         /**
          * Load torus object
          * @returns {Promise<Group>} torus object in Promise
          */
-        export function loadTorus(): Promise<THREE.Group> {
-            return new Promise<THREE.Group>((resolve, reject) => {
-                loadObject(
-                    'models/torus.obj',
-                    util.randomlyPick(['torus0.jpg', 'torus1.jpg'].map(x => 'models/' + x)),
-                    (group: THREE.Group) => {
-                        resolve(
-                            threeEx.GroupHelper.of(group)
-                                .scale(0.01, 0.01, 0.01)
-                                .positioning(0.5, 29.5, 0)
-                                .rotateX(-15)
-                                .visualize()
-                                .collect()
-                        )
-                    }, reject)
-            })
-
+        export async function loadTorus(): Promise<THREE.Group> {
+            const torus: THREE.Group = await loadObject(
+                'models/torus.obj',
+                util.randomlyPick(['torus0.jpg', 'torus1.jpg'].map(x => 'models/' + x))
+            )
+            return threeEx.GroupHelper.of(torus)
+                .scale(0.01, 0.01, 0.01)
+                .positioning(0.5, 29.5, 0)
+                .rotateX(-15)
+                .visualize()
+                .collect()
         }
 
         /**
          * Load stamens object
          * @returns {Promise<Group[]>} stamens object in Promise
          */
-        export function loadStamens(): Promise<THREE.Group[]> {
-            return new Promise<THREE.Group[]>((resolve, reject) => {
-                loadObject('models/stamen.obj', 'models/stamen.png', (group: THREE.Group) => {
-                    const basicGroupHelper =
-                        threeEx.GroupHelper.of(group)
-                            .scale(0.02, 0.02, 0.02)
-                            .positioning(0, 29.5, 0)
-                            .rotateX(0.9)
-                    const positions = [
-                        [-0.5, 29.5, 0],
-                        [0, 29.5, 0],
-                        [1, 29.5, 0],
-                        [1.5, 29.5, 0],
-                        [-0.25, 30, -0.5],
-                        [0.5, 30, -0.5],
-                        [1.25, 30, -0.5],
-                        [-0.25, 29, 0.5],
-                        [0.5, 29, 0.5],
-                        [1.25, 29, 0.5],
-                    ]
-                    const stamens: THREE.Group[] = []
-                    for (const position of positions) {
-                        stamens.push(
-                            basicGroupHelper
-                                .clone()
-                                .positioning(position[0], position[1], position[2])
-                                .collect()
-                        )
-                    }
-                    resolve(stamens)
-                }, reject)
-            })
-
+        export async function loadStamens(): Promise<THREE.Group[]> {
+            const stamen: THREE.Group = await loadObject('models/stamen.obj', 'models/stamen.png')
+            const basicGroupHelper =
+                threeEx.GroupHelper.of(stamen)
+                    .scale(0.02, 0.02, 0.02)
+                    .positioning(0, 29.5, 0)
+                    .rotateX(0.9)
+            const positions = [
+                [-0.5, 29.5, 0],
+                [0, 29.5, 0],
+                [1, 29.5, 0],
+                [1.5, 29.5, 0],
+                [-0.25, 30, -0.5],
+                [0.5, 30, -0.5],
+                [1.25, 30, -0.5],
+                [-0.25, 29, 0.5],
+                [0.5, 29, 0.5],
+                [1.25, 29, 0.5],
+            ]
+            const stamens: THREE.Group[] = []
+            for (const position of positions) {
+                stamens.push(
+                    basicGroupHelper
+                        .clone()
+                        .positioning(position[0], position[1], position[2])
+                        .collect()
+                )
+            }
+            return stamens
         }
 
         /**
          * Load petals objects
          * @returns {Promise<Group[]>} petals objects in Promise
          */
-        export function loadPetals(): Promise<THREE.Group[]> {
-            return new Promise<THREE.Group[]>((resolve, reject) => {
-                loadObject(
-                    util.randomlyPick(['petal0.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x)),
-                    util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.png'].map(x => 'models/' + x)),
-                    (group: THREE.Group) => {
-                        const basicGroupHelper =
-                            threeEx.GroupHelper.of(group)
-                                .scale(0.1, 0.1, 0.1)
-                                .positioning(1, 25, -1)
-                        const rotations = [
-                            [1.5, 0, 0],
-                            [1.7, 1, -0.6],
-                            [-0.7, (Math.PI / 3) * 2, 0.6],
-                            [-0.1, (Math.PI / 3) * 3, 0],
-                            [-0.9, (Math.PI / 3) * 4, -2],
-                            [1.7, (Math.PI / 3) * 5, 1.5]
-                        ]
-                        const petals: THREE.Group[] = []
-                        for (const rotation of rotations) {
-                            petals.push(
-                                basicGroupHelper
-                                    .clone()
-                                    .rotate(rotation[0], rotation[1], rotation[2])
-                                    .collect()
-                            )
-                        }
-                        resolve(petals)
-                    }, reject)
-            })
+        export async function loadPetals(): Promise<THREE.Group[]> {
+            const petal: THREE.Group = await loadObject(
+                util.randomlyPick(['petal0.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x)),
+                util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.png'].map(x => 'models/' + x))
+            )
+            const basicGroupHelper =
+                threeEx.GroupHelper.of(petal)
+                    .scale(0.1, 0.1, 0.1)
+                    .positioning(1, 25, -1)
+            const rotations = [
+                [1.5, 0, 0],
+                [1.7, 1, -0.6],
+                [-0.7, (Math.PI / 3) * 2, 0.6],
+                [-0.1, (Math.PI / 3) * 3, 0],
+                [-0.9, (Math.PI / 3) * 4, -2],
+                [1.7, (Math.PI / 3) * 5, 1.5]
+            ]
+            const petals: THREE.Group[] = []
+            for (const rotation of rotations) {
+                petals.push(
+                    basicGroupHelper
+                        .clone()
+                        .rotate(rotation[0], rotation[1], rotation[2])
+                        .collect()
+                )
+            }
+            return petals
         }
 
         /**
          * Load leaves objects
          * @returns {Promise<Group[]>} leaves objects in Promise
          */
-        export function loadLeaves(): Promise<THREE.Group[]> {
-            return new Promise<THREE.Group[]>((resolve, reject) => {
-                const leaves: THREE.Group[] = []
-                // leaf 0
-                loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
-                    leaves.push(
-                        threeEx.GroupHelper.of(group)
-                            .scale(0.1, 0.1, 0.1)
-                            .positioning(0.5, 5, 0.5)
-                            .rotateX(-Math.PI * 0.4)
-                            .rotateY(Math.PI * 0.8)
-                            .collect()
-                    )
-                }, reject)
-                // leaf 1
-                loadObject('models/leaf.obj', 'models/stem.jpg', (group: THREE.Group) => {
-                    leaves.push(
-                        threeEx.GroupHelper.of(group)
-                            .scale(0.1, 0.1, 0.1)
-                            .positioning(0.5, 23, -3.5)
-                            .rotateX(Math.PI * 0.3)
-                            .collect()
-                    )
-                }, reject)
-                resolve(leaves)
-            })
+        export async function loadLeaves(): Promise<THREE.Group[]> {
+            const leaf: THREE.Group = await loadObject('models/leaf.obj', 'models/stem.jpg')
+            const basicGroupHelper = threeEx.GroupHelper.of(leaf)
+            return [
+                basicGroupHelper
+                    .clone()
+                    .scale(0.1, 0.1, 0.1)
+                    .positioning(0.5, 5, 0.5)
+                    .rotateX(-Math.PI * 0.4)
+                    .rotateY(Math.PI * 0.8)
+                    .collect(),
+                basicGroupHelper
+                    .clone()
+                    .scale(0.1, 0.1, 0.1)
+                    .positioning(0.5, 23, -3.5)
+                    .rotateX(Math.PI * 0.3)
+                    .collect()
+            ]
         }
 
     }
