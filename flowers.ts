@@ -410,7 +410,7 @@ namespace control {
             }
 
             leavesInvalidated(): boolean {
-                return this.stem.scale.y >= 0.3 && this.leaves[0].scale.x <= 1
+                return this.stem.scale.y >= 0.3
             }
         }
 
@@ -424,7 +424,7 @@ namespace control {
                 stem.scale.y += 0.001
             }
             if (stem.scale.z <= 1) {
-                stem.scale.z += 0.001
+                stem.scale.z += 0.01
             }
         }
 
