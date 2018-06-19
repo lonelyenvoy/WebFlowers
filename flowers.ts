@@ -392,7 +392,7 @@ namespace control {
                     .positioning(1, 25, -1)
             const rotations = [
                 [1.5, 0, 0],
-                [1.7, 1, -0.6],
+                [1.7, (Math.PI / 3), -0.6],
                 [-0.7, (Math.PI / 3) * 2, 0.6],
                 [-0.1, (Math.PI / 3) * 3, 0],
                 [-0.9, (Math.PI / 3) * 4, -2],
