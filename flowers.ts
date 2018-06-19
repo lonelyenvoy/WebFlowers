@@ -85,8 +85,13 @@ namespace threeEx {
             return this
         }
 
-        visualize(flag = true): this {
-            this.group.visible = flag
+        show(): this {
+            this.group.visible = true
+            return this
+        }
+
+        hide(): this {
+            this.group.visible = false
             return this
         }
 
@@ -252,7 +257,7 @@ namespace control {
          */
         export async function loadLand(): Promise<THREE.Group> {
             const land: THREE.Group = await loadObject('models/land.obj', 'models/land.jpg')
-            return threeEx.GroupHelper.of(land).scale(100, 100, 100).visualize().collect()
+            return threeEx.GroupHelper.of(land).scale(100, 100, 100).show().collect()
         }
 
         /**
@@ -261,7 +266,7 @@ namespace control {
          */
         export async function loadStem(): Promise<THREE.Group> {
             const stem: THREE.Group = await loadObject('models/stem.obj', 'models/stem.jpg')
-            return threeEx.GroupHelper.of(stem).scale(1, 0.1, 0.1).visualize().collect()
+            return threeEx.GroupHelper.of(stem).scale(1, 0.1, 0.1).show().collect()
         }
 
         /**
@@ -277,7 +282,7 @@ namespace control {
                 .scale(0.01, 0.01, 0.01)
                 .positioning(0.5, 29.5, 0)
                 .rotateX(-15)
-                .visualize()
+                .show()
                 .collect()
         }
 
