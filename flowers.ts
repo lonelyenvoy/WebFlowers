@@ -433,7 +433,7 @@ namespace control {
                 stem.scale.y += 0.001
             }
             if (stem.scale.z <= 1) {
-                stem.scale.z += 0.01
+                stem.scale.z += 0.005
             }
         }
 
