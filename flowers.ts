@@ -390,14 +390,35 @@ namespace control {
                 threeEx.GroupHelper.of(petal)
                     .scale(0.1, 0.1, 0.1)
                     .positioning(1, 25, -1)
-            const rotations = [
+                    .hide()
+            // randomly generate 4/5/6/7 leaves
+            const rotations = util.randomlyPick([[
+                [1.5, 0, 0],
+                [1.7, Math.PI / 2, -0.6],
+                [-0.1, Math.PI, 0.6],
+                [-0.1, (Math.PI / 2) * 3, 0],
+            ], [
+                [1.5, 0, 0],
+                [1.7, (Math.PI / 5) * 2, -0.6],
+                [-0.1, (Math.PI / 5) * 4, 0.6],
+                [-0.1, (Math.PI / 5) * 6, 0],
+                [-0.9, (Math.PI / 5) * 8, -2],
+            ], [
                 [1.5, 0, 0],
                 [1.7, (Math.PI / 3), -0.6],
                 [-0.7, (Math.PI / 3) * 2, 0.6],
                 [-0.1, (Math.PI / 3) * 3, 0],
                 [-0.9, (Math.PI / 3) * 4, -2],
-                [1.7, (Math.PI / 3) * 5, 1.5]
-            ]
+                [1.7, (Math.PI / 3) * 5, 1.5],
+            ],[
+                [1.5, 0, 0],
+                [1.7, (Math.PI / 7) * 2, -0.6],
+                [-0.7, (Math.PI / 7) * 4, 0.6],
+                [-0.1, (Math.PI / 7) * 6, 0],
+                [-0.1, (Math.PI / 7) * 8, 0],
+                [1.7, (Math.PI / 7) * 10, 1.5],
+                [1.7, (Math.PI / 7) * 12, 0],
+            ]])
             const petals: THREE.Group[] = []
             for (const rotation of rotations) {
                 petals.push(
@@ -571,6 +592,9 @@ namespace control {
          * @impure
          */
         function updatePetals(petals: THREE.Group[]): void {
+            for (const petal of petals) {
+                petal.visible = true
+            }
             if (petals[0].position.y <= 41) {
                 for (const petal of petals) {
                     petal.position.y += 0.042
@@ -584,32 +608,43 @@ namespace control {
                 }
             }
 
-            //petal 0
+            // petal 0
             if(petals[0].rotation.x >= 0.7)
                 petals[0].rotation.x -= 0.003
-            //petal 1
+            // petal 1
             if(petals[1].rotation.x >= 0.7)
                 petals[1].rotation.x -= 0.003
             if(petals[1].rotation.z <=0)
                 petals[1].rotation.z += 0.003
-            //petal 2
+            // petal 2
             if(petals[2].rotation.x <= 0.7)
                 petals[2].rotation.x += 0.005
             if(petals[2].rotation.z >= 0)
                 petals[2].rotation.z -= 0.006
-            //petal 3
+            // petal 3
             if(petals[3].rotation.x <= 0.7)
                 petals[3].rotation.x += 0.003
-            //petal 4
-            if(petals[4].rotation.x <= 0.7)
-                petals[4].rotation.x += 0.005
-            if(petals[4].rotation.z <= 0)
-                petals[4].rotation.z += 0.0065
-            //petal 5
-            if(petals[5].rotation.x >= 0.7)
-                petals[5].rotation.x -= 0.005
-            if(petals[5].rotation.z >= 0)
-                petals[5].rotation.z -= 0.0065
+            if (petals.length >= 5) {
+                // petal 4
+                if (petals[4].rotation.x <= 0.7)
+                    petals[4].rotation.x += 0.005
+                if (petals[4].rotation.z <= 0)
+                    petals[4].rotation.z += 0.0065
+                if (petals.length >= 6) {
+                    // petal 5
+                    if (petals[5].rotation.x >= 0.7)
+                        petals[5].rotation.x -= 0.005
+                    if (petals[5].rotation.z >= 0)
+                        petals[5].rotation.z -= 0.0065
+                }
+                if (petals.length >= 7) {
+                    // petal 6
+                    if (petals[6].rotation.x >= 0.7)
+                        petals[6].rotation.x -= 0.005
+                    if (petals[6].rotation.z >= 0)
+                        petals[6].rotation.z -= 0.0065
+                }
+            }
         }
 
         /**
