@@ -211,6 +211,10 @@ namespace control {
         )
     }
 
+    function AxesHelper(): THREE.AxesHelper {
+        return new THREE.AxesHelper(50)
+    }
+
     /**
      * THREE.js object loading utils
      */
@@ -581,7 +585,7 @@ namespace control {
      * @returns {Promise<void>} nothing
      * @impure
      */
-    export async function initialize(): Promise<void> {
+    export async function initialize(debug = false): Promise<void> {
         // renderer
         const renderer: THREE.WebGLRenderer = Renderer()
         dom.canvas().appendChild(renderer.domElement)
@@ -601,6 +605,11 @@ namespace control {
 
         // grid
         scene.add(GridHelper())
+
+        // axes
+        if (debug) {
+            scene.add(AxesHelper())
+        }
 
         // resize event
         window.addEventListener('resize', () => {
