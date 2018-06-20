@@ -203,6 +203,20 @@ namespace util {
         if (array.length === 0) return null
         return array[array.length - 1]
     }
+
+    export namespace math {
+        export function meanVector(vectors: THREE.Vector3[]): THREE.Vector3 {
+            let x = 0
+            let y = 0
+            let z = 0
+            for (const vector of vectors) {
+                x += vector.x
+                y += vector.y
+                z += vector.z
+            }
+            return new THREE.Vector3(x / vectors.length, y / vectors.length, z / vectors.length)
+        }
+    }
 }
 
 /**
@@ -301,10 +315,7 @@ namespace threeEx {
             if (objects instanceof THREE.Object3D) {
                 this.scene.add(objects)
             } else {
-                const iterator: model.Iterator<THREE.Object3D> = objects.iterator()
-                while (iterator.hasNext()) {
-                    this.scene.add(iterator.next())
-                }
+                objects.all().map(object => this.scene.add(object))
             }
             return this
         }
@@ -341,6 +352,7 @@ namespace model {
 
     export interface Enumerable<T> {
         iterator(): Iterator<T>
+        all(): T[]
     }
 
     export interface Objects {
@@ -388,6 +400,15 @@ namespace model {
             return new ObjectIterator([this.stem, this.torus, this.stamens, this.petals, this.leaves])
         }
 
+        all(): THREE.Object3D[] {
+            const iterator: Iterator<THREE.Object3D> = this.iterator()
+            const result: THREE.Object3D[] = []
+            while (iterator.hasNext()) {
+                result.push(iterator.next())
+            }
+            return result
+        }
+
         clone(): Flower {
             return Flower.of(
                 this.stem.clone(),
@@ -396,6 +417,16 @@ namespace model {
                 threeEx.ObjectsHelper.of(this.petals).clone().collect(),
                 threeEx.ObjectsHelper.of(this.leaves).clone().collect(),
             )
+        }
+
+        getCentralPosition(): THREE.Vector3 {
+            const vectors: THREE.Vector3[] = this.all().map(object => object.position)
+            return util.math.meanVector(vectors)
+        }
+
+        moveHorizontallyTo(destination: THREE.Vector3): this {
+            this.all().map(object => object.position.setX(destination.x).setZ(destination.z))
+            return this
         }
 
         moveRandomly(bounds?: {xMin?: number, xMax?: number, zMin?: number, zMax?: number}): this {
@@ -413,12 +444,10 @@ namespace model {
             const xDelta = util.randomlyPick([util.random(-bounds.xMax, -bounds.xMin), util.random(bounds.xMin, bounds.xMax)])
             const zDelta = util.randomlyPick([util.random(-bounds.zMax, -bounds.zMin), util.random(bounds.zMin, bounds.zMax)])
             // move
-            const iterator: Iterator<THREE.Object3D> = this.iterator()
-            while (iterator.hasNext()) {
-                const object: THREE.Object3D = iterator.next()
+            this.all().map(object => {
                 object.position.x += xDelta
                 object.position.z += zDelta
-            }
+            })
             return this
         }
     }
@@ -809,7 +838,8 @@ namespace control {
                 if (this.generatedFlowers.length === 0) {
                     this.generatedFlowers.push(flower) // initial flower should be at the original position
                 } else {
-                    this.generatedFlowers.push(flower.moveRandomly())
+                    const last = <model.Flower> util.tail(this.generatedFlowers)
+                    this.generatedFlowers.push(flower.moveHorizontallyTo(last.getCentralPosition()).moveRandomly())
                 }
                 return <model.Flower> util.tail(this.generatedFlowers)
             }
@@ -1135,5 +1165,5 @@ namespace control {
  */
 (async () => {
     polyfills.install()
-    await control.initialize()
+    await control.initialize(true)
 })()
