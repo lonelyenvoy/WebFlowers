@@ -623,6 +623,11 @@ namespace control {
     namespace objectLoading {
 
         /**
+         * loading cache
+         */
+        const cache: any = {}
+
+        /**
          * General object loading function
          * @param {string} modelUrl - Url of the model to be load
          * @param {string} modelTextureUrl - Url of the texture to be load
@@ -676,8 +681,17 @@ namespace control {
          * @returns {Promise<Group>} stem object in Promise
          */
         export async function loadStem(): Promise<THREE.Group> {
-            const stem: THREE.Group = await loadObject('models/stem.obj', 'models/stem.jpg')
-            return threeEx.GroupHelper.of(stem).scale(1, 0.1, 0.1).show().collect()
+            const modelUrl = 'models/stem.obj'
+            const textureUrl = 'models/stem.jpg'
+            const stemName = 'stem_' + modelUrl + textureUrl
+            if (cache[stemName] === undefined) {
+                cache[stemName] = await loadObject(modelUrl, textureUrl)
+            }
+            return threeEx.GroupHelper.of(cache[stemName])
+                .clone()
+                .scale(1, 0.1, 0.1)
+                .show()
+                .collect()
         }
 
         /**
@@ -685,11 +699,14 @@ namespace control {
          * @returns {Promise<Group>} torus object in Promise
          */
         export async function loadTorus(): Promise<THREE.Group> {
-            const torus: THREE.Group = await loadObject(
-                'models/torus.obj',
-                util.randomlyPick(util.range(5).map(x => 'models/torus' + x + '.jpg'))
-            )
-            return threeEx.GroupHelper.of(torus)
+            const modelUrl = 'models/torus.obj'
+            const textureUrl: string = util.randomlyPick(util.range(5).map(x => 'models/torus' + x + '.jpg'))
+            const torusName = 'torus_' + modelUrl + textureUrl
+            if (cache[torusName] === undefined) {
+                cache[torusName] = await loadObject(modelUrl, textureUrl)
+            }
+            return threeEx.GroupHelper.of(cache[torusName])
+                .clone()
                 .scale(0.01, 0.01, 0.01)
                 .positioning(0.5, 29.5, 0.125)
                 .rotateX(Math.PI * 0.2778)
@@ -702,9 +719,15 @@ namespace control {
          * @returns {Promise<Group[]>} stamens object in Promise
          */
         export async function loadStamens(): Promise<THREE.Group[]> {
-            const stamen: THREE.Group = await loadObject('models/stamen.obj', 'models/stamen.png')
+            const modelUrl = 'models/stamen.obj'
+            const textureUrl = 'models/stamen.png'
+            const stamenName = 'stamen_' + modelUrl + textureUrl
+            if (cache[stamenName] === undefined) {
+                cache[stamenName] = await loadObject(modelUrl, textureUrl)
+            }
             const basicGroupHelper =
-                threeEx.GroupHelper.of(stamen)
+                threeEx.GroupHelper.of(cache[stamenName])
+                    .clone()
                     .scale(0.02, 0.02, 0.02)
                     .positioning(0, 29.5, 0)
                     .rotateX(0.9)
@@ -761,12 +784,15 @@ namespace control {
          * @returns {Promise<Group[]>} petals objects in Promise
          */
         export async function loadPetals(): Promise<THREE.Group[]> {
-            const petal: THREE.Group = await loadObject(
-                util.randomlyPick(['petal0.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x)),
-                util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.png'].map(x => 'models/' + x))
-            )
+            const modelUrl = util.randomlyPick(['petal0.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x))
+            const textureUrl = util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.png'].map(x => 'models/' + x))
+            const petalName = 'petal_' + modelUrl + textureUrl
+            if (cache[petalName] === undefined) {
+                cache[petalName] = await loadObject(modelUrl, textureUrl)
+            }
             const basicGroupHelper =
-                threeEx.GroupHelper.of(petal)
+                threeEx.GroupHelper.of(cache[petalName])
+                    .clone()
                     .scale(0.1, 0.1, 0.1)
                     .positioning(1, 25, -1)
                     .hide()
@@ -815,9 +841,15 @@ namespace control {
          * @returns {Promise<Group[]>} leaves objects in Promise
          */
         export async function loadLeaves(): Promise<THREE.Group[]> {
-            const leaf: THREE.Group = await loadObject('models/leaf.obj', 'models/stem.jpg')
+            const modelUrl = 'models/leaf.obj'
+            const textureUrl = 'models/stem.jpg'
+            const leafName = 'leaf_' + modelUrl + textureUrl
+            if (cache[leafName] === undefined) {
+                cache[leafName] = await loadObject(modelUrl, textureUrl)
+            }
             const basicGroupHelper =
-                threeEx.GroupHelper.of(leaf)
+                threeEx.GroupHelper.of(cache[leafName])
+                    .clone()
                     .scale(0.1, 0.1, 0.1)
                     .hide()
             const getXRandomRotation = () => Math.PI * util.random(-0.5, 0.5)
