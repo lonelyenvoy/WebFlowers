@@ -298,7 +298,7 @@ namespace control {
             antialias: true
         })
         renderer.setSize(dom.canvas().clientWidth, dom.canvas().clientHeight)
-        renderer.setClearColor(0xBDFCC9, 1.0)
+        renderer.setClearColor(0xcce0ff, 1.0)
         return renderer
     }
 
@@ -309,7 +309,7 @@ namespace control {
             1,
             3000
         )
-        camera.position.set(80, 40, 80)
+        camera.position.set(-80, 60, 80)
         camera.up.set(0, 1, 0)
         return camera
     }
@@ -319,8 +319,8 @@ namespace control {
     }
 
     function Light(): THREE.Light {
-        const light = new THREE.DirectionalLight(0xFFFFFF)
-        light.position.set(100, 100, 0)
+        const light = new THREE.DirectionalLight(0xdfebff)
+        light.position.set(0, 100, 100)
         light.castShadow = true
         return light
     }
@@ -400,7 +400,7 @@ namespace control {
             const land: THREE.Group = await loadObject('models/land.obj', 'models/land.jpg')
             return threeEx.GroupHelper.of(land)
                 .scale(30, 30, 30)
-                .rotateY(-Math.PI / 8)
+                .rotateY(-(Math.PI / 8 + Math.PI / 2))
                 .positioning(0, 10, 0)
                 .show()
                 .collect()
@@ -910,6 +910,9 @@ namespace control {
         for (const leaf of leaves) {
             scene.add(leaf)
         }
+
+        // fog
+        scene.fog = new THREE.Fog(0xcce0ff, 50, 1000)
 
         // render
         rendering.render(renderer, scene, camera, stem, torus, stamens, petals, leaves)
