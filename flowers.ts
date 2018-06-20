@@ -354,6 +354,10 @@ namespace control {
         return light
     }
 
+    function Fog(): THREE.Fog {
+        return new THREE.Fog(0xcce0ff, 50, 1000)
+    }
+
     function OrbitControls(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer)
         : THREE.OrbitControls {
         const orbitControls = new THREE.OrbitControls(camera, renderer.domElement)
@@ -836,16 +840,11 @@ namespace control {
         }
 
         /**
-         * Initiate the process of updating objects and rendering the scene
-         * @param {WebGLRenderer} renderer - renderer
-         * @param {Scene} scene - scene
-         * @param {PerspectiveCamera} camera - camera
+         * Initiate the process of updating objects
          * @param {Flower} flower - the flower object
          * @impure
          */
-        export function render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera,
-                               flower: model.Flower
-        ): void {
+        export function update(flower: model.Flower): void {
             const checker: ValidityChecker = ValidityChecker.of(flower);
 
             (function frame () {
@@ -862,6 +861,19 @@ namespace control {
                 }
                 // leaves
                 updateLeaves(flower.leaves, checker.leavesInvalidities())
+                requestAnimationFrame(frame)
+            })()
+        }
+
+        /**
+         * Initiate the process of rendering the scene
+         * @param {WebGLRenderer} renderer - renderer
+         * @param {Scene} scene - scene
+         * @param {PerspectiveCamera} camera - camera
+         * @impure
+         */
+        export function render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera): void {
+            (function frame () {
                 renderer.render(scene, camera)
                 requestAnimationFrame(frame)
             })()
@@ -890,6 +902,9 @@ namespace control {
 
         // light
         scene.add(Light())
+
+        // fog
+        scene.fog = Fog()
 
         if (debug) {
             // grid
@@ -929,11 +944,9 @@ namespace control {
             scene.add(leaf)
         }
 
-        // fog
-        scene.fog = new THREE.Fog(0xcce0ff, 50, 1000)
-
         // render
-        rendering.render(renderer, scene, camera, model.Flower.of(stem, torus, stamens, petals, leaves))
+        rendering.render(renderer, scene, camera)
+        rendering.update(model.Flower.of(stem, torus, stamens, petals, leaves))
     }
 }
 
