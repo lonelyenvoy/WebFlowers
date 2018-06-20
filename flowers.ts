@@ -10,6 +10,8 @@
 namespace constants {
     export const minLeaves = 1
     export const maxLeaves = 4
+    export const minStamens = 25
+    export const maxStamens = 30
 }
 
 /**
@@ -26,6 +28,16 @@ namespace dom {
 }
 
 /**
+ * Errors
+ */
+namespace error {
+    /**
+     * Indicates one or many arguments are illegal
+     */
+    export class IllegalArgumentError extends Error {}
+}
+
+/**
  * General utils
  */
 namespace util {
@@ -35,6 +47,7 @@ namespace util {
      * @returns {number[]} result, for example [0, 1, 2, 3, 4]
      */
     export function range(bound: number): number[] {
+        if (bound < 0) throw new error.IllegalArgumentError('Invalid range bound')
         return Array.from(Array(bound).keys())
     }
 
@@ -64,9 +77,43 @@ namespace util {
      * @returns {boolean[]} result, for example [true, true, false]
      */
     export function randomBooleanArray(length: number): boolean[] {
+        if (length < 0) throw new error.IllegalArgumentError('Invalid array length')
         const array = []
         for (const _ of range(length)) {
             array.push(Math.round(Math.random()) === 1)
+        }
+        return array
+    }
+
+    /**
+     * Generate random boolean array with lower and upper bounds on the number of trues in array
+     * @param {number} length - the length of the array
+     * @param {number} lowerBound - the lower bound of the number of trues in array
+     * @param {number} upperBound - the upper bound of the number of trues in array
+     * @returns {boolean[]} result, for example [true, true, false]
+     */
+    export function boundedRandomBooleanArray(length: number, lowerBound: number, upperBound: number): boolean[] {
+        // ensure bounds validity
+        if (lowerBound > upperBound) {
+            const tmp = lowerBound
+            lowerBound = upperBound
+            upperBound = tmp
+        }
+        if (length < 0) throw new error.IllegalArgumentError('Invalid array length')
+        if (lowerBound > length || upperBound < 0) throw new error.IllegalArgumentError('Invalid bounds')
+        // generate random array
+        const array: boolean[] = randomBooleanArray(length)
+        // limit number of trues
+        let trues: number
+        while (
+            (trues = array.filter(x => x === true).length) < lowerBound || trues > upperBound) {
+            const toBe: boolean = trues < lowerBound
+            const indexes: number[] =
+                array
+                    .map((item, index) => item !== toBe ? index : -1)
+                    .filter(x => x !== -1)
+
+            array[indexes[Math.floor(random(0, indexes.length))]] = toBe
         }
         return array
     }
@@ -81,16 +128,53 @@ namespace util {
      */
     export function andBooleanArrays(...arrays: boolean[][]): boolean[] {
         if (arrays.length === 0) return []
-        const result: boolean[] = []
-        for (const _ of range(arrays[0].length)) {
-            result.push(true)
-        }
+        const result: boolean[] = fillArray(Array(arrays[0].length), true)
         arrays.map((array) => {
             array.map((item, index) => {
                 if (!item) result[index] = false
             })
         })
         return result
+    }
+
+    /**
+     * Fill an array with all the same thing
+     * @param {T[]} array - the array to be filled
+     * @param {T} item - the item to be filled in
+     * @returns {T[]} result, for example [1, 1, 1, 1]
+     */
+    export function fillArray<T>(array: T[], item: T): T[] {
+        for (let i = 0; i < array.length; i++) {
+            array[i] = item
+        }
+        return array
+    }
+
+    /**
+     * Retrieve the first item subject to a predicate in an array
+     * @param {T[]} array - the array being tested
+     * @param {(item: T) => boolean} predicate - the predicate to filter array
+     * @returns {T | null} the expected item in the array, or null if none is found
+     */
+    export function first<T>(array: T[], predicate: (item: T, index: number) => boolean): T | null {
+        const index: number | null = firstIndex(array, predicate)
+        if (index === null) return null
+        return array[index]
+    }
+
+    /**
+     * Retrieve the index of the first item subject to a predicate in an array
+     * @param {T[]} array - the array being tested
+     * @param {(item: T) => boolean} predicate - the predicate to filter array
+     * @returns {number | null} the index of the expected item in the array, or null if none is found
+     */
+    export function firstIndex<T>(array: T[], predicate: (item: T, index: number) => boolean): number | null {
+        for (const i of range(array.length)) {
+            if (predicate(array[i], i)) {
+                return i
+            }
+        }
+        return null
     }
 }
 
@@ -338,7 +422,7 @@ namespace control {
                 .scale(0.01, 0.01, 0.01)
                 .positioning(0.5, 29.5, 0)
                 .rotateX(-15)
-                .show()
+                .hide()
                 .collect()
         }
 
@@ -353,17 +437,41 @@ namespace control {
                     .scale(0.02, 0.02, 0.02)
                     .positioning(0, 29.5, 0)
                     .rotateX(0.9)
+                    .hide()
             const positions = [
                 [-0.5, 29.5, 0],
+                [-0.25, 29.75, -0.25],
+                [-0.25, 29.5, 0],
+                [-0.25, 29.25, 0.25],
+                [0, 30, -0.5],
+                [0, 29.75, -0.25],
                 [0, 29.5, 0],
-                [1, 29.5, 0],
-                [1.5, 29.5, 0],
-                [-0.25, 30, -0.5],
+                [0, 29.25, 0.25],
+                [0, 29, 0.5],
+                [0.25, 30, -0.5],
+                [0.25, 29.75, -0.25],
+                [0.25, 29.5, 0],
+                [0.25, 29.25, 0.25],
+                [0.25, 29, 0.5],
                 [0.5, 30, -0.5],
-                [1.25, 30, -0.5],
-                [-0.25, 29, 0.5],
+                [0.5, 29.75, -0.25],
+                [0.5, 29.5, 0],
+                [0.5, 29.25, 0.25],
                 [0.5, 29, 0.5],
-                [1.25, 29, 0.5],
+                [0.75, 30, -0.5],
+                [0.75, 29.75, -0.25],
+                [0.75, 29.5, 0],
+                [0.75, 29.25, 0.25],
+                [0.75, 29, 0.5],
+                [1, 30, -0.5],
+                [1, 29.75, -0.25],
+                [1, 29.5, 0],
+                [1, 29.25, 0.25],
+                [1, 29, 0.5],
+                [1.25, 29.75, -0.25],
+                [1.25, 29.5, 0],
+                [1.25, 29.25, 0.25],
+                [1.5, 29.5, 0]
             ]
             const stamens: THREE.Group[] = []
             for (const position of positions) {
@@ -391,7 +499,7 @@ namespace control {
                     .scale(0.1, 0.1, 0.1)
                     .positioning(1, 25, -1)
                     .hide()
-            // randomly generate 4/5/6/7 leaves
+            // randomly generate 4/5/6/7 petals
             const rotations = util.randomlyPick([[
                 [1.5, 0, 0],
                 [1.7, Math.PI / 2, -0.6],
@@ -499,14 +607,8 @@ namespace control {
                                 private stamens: THREE.Group[],
                                 private petals: THREE.Group[],
                                 private leaves: THREE.Group[]) {
-                this.leavesLottery = util.randomBooleanArray(this.leaves.length)
-                // restrict the number of leaves to a limited range
-                let trues: number
-                while (
-                    (trues = this.leavesLottery.filter(x => x === true).length) < constants.minLeaves
-                    || trues > constants.maxLeaves) {
-                    this.leavesLottery[util.random(0, this.leavesLottery.length)] = trues < constants.minLeaves
-                }
+                this.stamensLottery = util.boundedRandomBooleanArray(this.stamens.length, constants.minStamens, constants.maxStamens)
+                this.leavesLottery = util.boundedRandomBooleanArray(this.leaves.length, constants.minLeaves, constants.maxLeaves)
             }
             static of(stem: THREE.Group,
                       torus: THREE.Group,
@@ -517,6 +619,10 @@ namespace control {
             }
 
             /**
+             * Indicate whether each stamen will be shown
+             */
+            private readonly stamensLottery: boolean[]
+            /**
              * Indicate whether each leaf will be shown
              */
             private readonly leavesLottery: boolean[]
@@ -525,8 +631,16 @@ namespace control {
                 return this.stem.scale.y <= 1
             }
 
-            torusOrStamensInvalidated(): boolean {
+            torusInvalidated(): boolean {
                 return this.stem.scale.y >= 0.7
+            }
+
+            stamensInvalidated(): boolean[] {
+                if (this.torusInvalidated()) {
+                    return this.stamensLottery
+                } else {
+                    return util.fillArray(Array(this.stamens.length), false) // all false
+                }
             }
 
             petalsInvalidated(): boolean {
@@ -563,25 +677,41 @@ namespace control {
          * Update torus object and stamen objects
          * @param {Group} torus - torus object
          * @param {Group[]} stamens - stamen objects
+         * @param {boolean} torusInvalidated - the invalidity of torus
+         * @param {boolean[]} stamenInvalidities - the invalidity of each stamen
          * @impure
          */
-        function updateTorusAndStamens(torus: THREE.Group, stamens: THREE.Group[]): void {
-            if (torus.scale.x <= 0.1) {
-                torus.scale.x += 0.00035
-                torus.scale.y += 0.00025
-                torus.scale.z += 0.00035
-            }
-            if (torus.position.y <= 41.5) {
-                torus.position.y += 0.04
-                for (const stamen of stamens) {
-                    stamen.position.y += 0.04
+        function updateTorusAndStamens(torus: THREE.Group, stamens: THREE.Group[],
+                                       torusInvalidated: boolean, stamenInvalidities: boolean[]): void {
+            if (torusInvalidated) {
+                torus.visible = true
+                if (torus.scale.x <= 0.1) {
+                    torus.scale.x += 0.00035
+                    torus.scale.y += 0.00025
+                    torus.scale.z += 0.00035
+                }
+                if (torus.position.y <= 41.5) {
+                    torus.position.y += 0.04
                 }
             }
-            if (stamens[0].scale.x <= 0.12) {
-                for (const stamen of stamens) {
-                    stamen.scale.x += 0.0003
-                    stamen.scale.y += 0.0003
-                    stamen.scale.z += 0.0003
+            const firstInvalidatedStamen: THREE.Group | null =
+                util.first(stamens, (item: THREE.Group, index: number) => stamenInvalidities[index])
+            if (firstInvalidatedStamen !== null
+                && (firstInvalidatedStamen.scale.x <= 0.12 || torus.position.y <= 41.5)) {
+                for (let i = 0; i < stamens.length; i++) {
+                    const stamen: THREE.Group = stamens[i]
+                    const invalidated: boolean = stamenInvalidities[i]
+                    if (invalidated) {
+                        stamen.visible = true
+                        if (firstInvalidatedStamen.scale.x <= 0.12) {
+                            stamen.scale.x += 0.0003
+                            stamen.scale.y += 0.0003
+                            stamen.scale.z += 0.0003
+                        }
+                        if (torus.position.y <= 41.5) {
+                            stamen.position.y += 0.04
+                        }
+                    }
                 }
             }
         }
@@ -696,15 +826,17 @@ namespace control {
             const checker: ValidityChecker = ValidityChecker.of(stem, torus, stamens, petals, leaves);
 
             (function frame () {
+                // stem
                 if (checker.stemInvalidated()) {
                     updateStem(stem)
                 }
-                if (checker.torusOrStamensInvalidated()) {
-                    updateTorusAndStamens(torus, stamens)
-                }
+                // torus and stamens
+                updateTorusAndStamens(torus, stamens, checker.torusInvalidated(), checker.stamensInvalidated())
+                // petals
                 if (checker.petalsInvalidated()) {
                     updatePetals(petals)
                 }
+                // leaves
                 updateLeaves(leaves, checker.leavesInvalidities())
                 renderer.render(scene, camera)
                 requestAnimationFrame(frame)
