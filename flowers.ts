@@ -416,12 +416,12 @@ namespace control {
         export async function loadTorus(): Promise<THREE.Group> {
             const torus: THREE.Group = await loadObject(
                 'models/torus.obj',
-                util.randomlyPick(['torus0.jpg', 'torus1.jpg'].map(x => 'models/' + x))
+                util.randomlyPick(util.range(5).map(x => 'models/torus' + x + '.jpg'))
             )
             return threeEx.GroupHelper.of(torus)
                 .scale(0.01, 0.01, 0.01)
-                .positioning(0.5, 29.5, 0)
-                .rotateX(-15)
+                .positioning(0.5, 29.5, 0.125)
+                .rotateX(Math.PI * 0.2778)
                 .hide()
                 .collect()
         }
