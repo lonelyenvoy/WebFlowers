@@ -839,7 +839,16 @@ namespace control {
                     this.generatedFlowers.push(flower) // initial flower should be at the original position
                 } else {
                     const last = <model.Flower> util.tail(this.generatedFlowers)
-                    this.generatedFlowers.push(flower.moveHorizontallyTo(last.getCentralPosition()).moveRandomly())
+                    this.generatedFlowers.push(
+                        flower
+                            .moveHorizontallyTo(
+                                // the mean position of all generated flowers
+                                util.math.meanVector(
+                                    this.generatedFlowers.map(flower => flower.getCentralPosition())
+                                )
+                            )
+                            .moveRandomly()
+                    )
                 }
                 return <model.Flower> util.tail(this.generatedFlowers)
             }
