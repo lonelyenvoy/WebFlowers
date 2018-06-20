@@ -35,6 +35,11 @@ namespace error {
      * Indicates one or many arguments are illegal
      */
     export class IllegalArgumentError extends Error {}
+
+    /**
+     * Indicates the code ran into an illegal state
+     */
+    export class IllegalStateError extends Error {}
 }
 
 /**
@@ -254,10 +259,50 @@ namespace threeEx {
             return this.group
         }
     }
+
+    /**
+     * THREE.Scene helper
+     */
+    export class SceneHelper {
+        private constructor(private scene: THREE.Scene) {}
+        static of(scene: THREE.Scene): SceneHelper {
+            return new SceneHelper(scene)
+        }
+
+        /**
+         * add objects to scene
+         * @param {model.Enumerable<Object3D>} objects - the objects to be added
+         * @returns {SceneHelper} this
+         */
+        add(objects: THREE.Object3D | model.Enumerable<THREE.Object3D>): this {
+            if (objects instanceof THREE.Object3D) {
+                this.scene.add(objects)
+            } else {
+                const iterator: model.Iterator<THREE.Object3D> = objects.iterator()
+                while (iterator.hasNext()) {
+                    this.scene.add(iterator.next())
+                }
+            }
+            return this
+        }
+    }
 }
 
 namespace model {
-    export class Flower {
+    export interface Iterator<T> {
+        hasNext(): boolean
+        next(): T
+    }
+
+    export interface Enumerable<T> {
+        iterator(): Iterator<T>
+    }
+
+    export interface Objects {
+
+    }
+
+    export class Flower implements Objects, Enumerable<THREE.Object3D> {
         private constructor(public stem: THREE.Group,
                             public torus: THREE.Group,
                             public stamens: THREE.Group[],
@@ -266,6 +311,36 @@ namespace model {
         static of(stem: THREE.Group, torus: THREE.Group,
                   stamens: THREE.Group[], petals: THREE.Group[], leaves: THREE.Group[]): Flower {
             return new Flower(stem, torus, stamens, petals, leaves)
+        }
+
+        iterator(): Iterator<THREE.Object3D> {
+            class ObjectIterator implements Iterator<THREE.Object3D> {
+                constructor(objects: (THREE.Object3D | THREE.Object3D[])[]) {
+                    for (const object of objects) {
+                        if (object instanceof THREE.Object3D) {
+                            this.objects.push(object)
+                        } else {
+                            for (const singleObject of object) {
+                                this.objects.push(singleObject)
+                            }
+                        }
+                    }
+                }
+                private objects: THREE.Object3D[] = []
+                private index = 0
+
+                hasNext(): boolean {
+                    return this.index !== this.objects.length - 1
+                }
+
+                next(): THREE.Object3D {
+                    if (!this.hasNext()) throw new error.IllegalStateError('Iterator doesn\'t have next item')
+                    return this.objects[this.index++]
+                }
+
+            }
+
+            return new ObjectIterator([this.stem, this.torus, this.stamens, this.petals, this.leaves])
         }
     }
 }
@@ -277,7 +352,7 @@ namespace polyfills {
      */
     function dateNow() {
         if (!Date.now)
-            Date.now = function() { return new Date().getTime() };
+            Date.now = function() { return new Date().getTime() }
     }
 
     /**
@@ -299,7 +374,7 @@ namespace polyfills {
             window.requestAnimationFrame = function(callback) {
                 const now = Date.now()
                 const nextTime = Math.max(lastTime + 16, now)
-                return setTimeout(function() { callback(lastTime = nextTime); },
+                return setTimeout(function() { callback(lastTime = nextTime) },
                     nextTime - now)
             }
             window.cancelAnimationFrame = clearTimeout
@@ -924,25 +999,17 @@ namespace control {
 
         // load objects
         const land: THREE.Group = await objectLoading.loadLand()
+
         const stem: THREE.Group = await objectLoading.loadStem()
         const torus: THREE.Group = await objectLoading.loadTorus()
         const stamens: THREE.Group[] = await objectLoading.loadStamens()
         const petals: THREE.Group[] = await objectLoading.loadPetals()
         const leaves: THREE.Group[] = await objectLoading.loadLeaves()
 
+        const flower: model.Flower = model.Flower.of(stem, torus, stamens, petals, leaves)
+
         // add objects to scene
-        scene.add(land)
-        scene.add(stem)
-        scene.add(torus)
-        for (const stamen of stamens) {
-            scene.add(stamen)
-        }
-        for (const petal of petals) {
-            scene.add(petal)
-        }
-        for (const leaf of leaves) {
-            scene.add(leaf)
-        }
+        threeEx.SceneHelper.of(scene).add(land).add(flower)
 
         // render
         rendering.render(renderer, scene, camera)
