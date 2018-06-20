@@ -7,11 +7,23 @@
 /**
  * App related constants
  */
-namespace constants {
-    export const minLeaves = 1
-    export const maxLeaves = 4
-    export const minStamens = 25
-    export const maxStamens = 30
+namespace constant {
+    export namespace flower {
+        export namespace numberOf {
+            export namespace leaf {
+                export const min = 1
+                export const max = 4
+            }
+            export namespace stamen {
+                export const min = 25
+                export const max = 30
+            }
+        }
+        export namespace positionInterval {
+            export const min = 20
+            export const max = 80
+        }
+    }
 }
 
 /**
@@ -181,6 +193,16 @@ namespace util {
         }
         return null
     }
+
+    /**
+     * Get the last element in an array
+     * @param {T[]} array - the array to be operated
+     * @returns {T | null} result, null if array.length === 0
+     */
+    export function tail<T>(array: T[]): T | null {
+        if (array.length === 0) return null
+        return array[array.length - 1]
+    }
 }
 
 /**
@@ -273,6 +295,7 @@ namespace threeEx {
          * add objects to scene
          * @param {model.Enumerable<Object3D>} objects - the objects to be added
          * @returns {SceneHelper} this
+         * @impure
          */
         add(objects: THREE.Object3D | model.Enumerable<THREE.Object3D>): this {
             if (objects instanceof THREE.Object3D) {
@@ -284,6 +307,28 @@ namespace threeEx {
                 }
             }
             return this
+        }
+    }
+
+    /**
+     * THREE.Object3D[] helper
+     */
+    export class ObjectsHelper {
+        private constructor(private objects: THREE.Object3D[]) {}
+        static of(objects: THREE.Object3D[]): ObjectsHelper {
+            return new ObjectsHelper(objects)
+        }
+
+        clone(): ObjectsHelper {
+            const cloned: THREE.Object3D[] = []
+            for (const object of this.objects) {
+                cloned.push(object.clone())
+            }
+            return ObjectsHelper.of(cloned)
+        }
+
+        collect(): THREE.Object3D[] {
+            return this.objects
         }
     }
 }
@@ -330,7 +375,7 @@ namespace model {
                 private index = 0
 
                 hasNext(): boolean {
-                    return this.index !== this.objects.length - 1
+                    return this.index < this.objects.length
                 }
 
                 next(): THREE.Object3D {
@@ -341,6 +386,40 @@ namespace model {
             }
 
             return new ObjectIterator([this.stem, this.torus, this.stamens, this.petals, this.leaves])
+        }
+
+        clone(): Flower {
+            return Flower.of(
+                this.stem.clone(),
+                this.torus.clone(),
+                threeEx.ObjectsHelper.of(this.stamens).clone().collect(),
+                threeEx.ObjectsHelper.of(this.petals).clone().collect(),
+                threeEx.ObjectsHelper.of(this.leaves).clone().collect(),
+            )
+        }
+
+        moveRandomly(bounds?: {xMin?: number, xMax?: number, zMin?: number, zMax?: number}): this {
+            // set defaults
+            if (bounds === undefined) bounds = {}
+            if (bounds.xMin === undefined) bounds.xMin = constant.flower.positionInterval.min
+            if (bounds.zMin === undefined) bounds.zMin = constant.flower.positionInterval.min
+            if (bounds.xMax === undefined) bounds.xMax = constant.flower.positionInterval.max
+            if (bounds.zMax === undefined) bounds.zMax = constant.flower.positionInterval.max
+            // check validity
+            if (bounds.xMin < 0 || bounds.zMin < 0 || bounds.xMax < bounds.xMin || bounds.zMax < bounds.zMin)
+                throw new error.IllegalArgumentError('Invalid bounds')
+
+            // get random value
+            const xDelta = util.randomlyPick([util.random(-bounds.xMax, -bounds.xMin), util.random(bounds.xMin, bounds.xMax)])
+            const zDelta = util.randomlyPick([util.random(-bounds.zMax, -bounds.zMin), util.random(bounds.zMin, bounds.zMax)])
+            // move
+            const iterator: Iterator<THREE.Object3D> = this.iterator()
+            while (iterator.hasNext()) {
+                const object: THREE.Object3D = iterator.next()
+                object.position.x += xDelta
+                object.position.z += zDelta
+            }
+            return this
         }
     }
 }
@@ -708,6 +787,36 @@ namespace control {
     }
 
     /**
+     * Object generating utils
+     */
+    namespace objectGenerating {
+        export class FlowersGenerator {
+            private static generatedFlowers: model.Flower[] = []
+
+            static reset(): void {
+                this.generatedFlowers = []
+            }
+
+            static async next(): Promise<model.Flower> {
+                const flower: model.Flower =
+                    model.Flower.of(
+                        await objectLoading.loadStem(),
+                        await objectLoading.loadTorus(),
+                        await objectLoading.loadStamens(),
+                        await objectLoading.loadPetals(),
+                        await objectLoading.loadLeaves()
+                    )
+                if (this.generatedFlowers.length === 0) {
+                    this.generatedFlowers.push(flower) // initial flower should be at the original position
+                } else {
+                    this.generatedFlowers.push(flower.moveRandomly())
+                }
+                return <model.Flower> util.tail(this.generatedFlowers)
+            }
+        }
+    }
+
+    /**
      * Rendering utils
      */
     namespace rendering {
@@ -717,8 +826,14 @@ namespace control {
          */
         class ValidityChecker {
             private constructor(private flower: model.Flower) {
-                this.stamensLottery = util.boundedRandomBooleanArray(this.flower.stamens.length, constants.minStamens, constants.maxStamens)
-                this.leavesLottery = util.boundedRandomBooleanArray(this.flower.leaves.length, constants.minLeaves, constants.maxLeaves)
+                this.stamensLottery =
+                    util.boundedRandomBooleanArray(
+                        this.flower.stamens.length, constant.flower.numberOf.stamen.min, constant.flower.numberOf.stamen.max
+                    )
+                this.leavesLottery =
+                    util.boundedRandomBooleanArray(
+                        this.flower.leaves.length, constant.flower.numberOf.leaf.min, constant.flower.numberOf.leaf.max
+                    )
             }
             static of(flower: model.Flower): ValidityChecker {
                 return new ValidityChecker(flower)
@@ -997,23 +1112,21 @@ namespace control {
         // dispatch resize event
         window.dispatchEvent(new Event('resize'))
 
-        // load objects
+        // load land
         const land: THREE.Group = await objectLoading.loadLand()
+        scene.add(land)
 
-        const stem: THREE.Group = await objectLoading.loadStem()
-        const torus: THREE.Group = await objectLoading.loadTorus()
-        const stamens: THREE.Group[] = await objectLoading.loadStamens()
-        const petals: THREE.Group[] = await objectLoading.loadPetals()
-        const leaves: THREE.Group[] = await objectLoading.loadLeaves()
-
-        const flower: model.Flower = model.Flower.of(stem, torus, stamens, petals, leaves)
-
-        // add objects to scene
-        threeEx.SceneHelper.of(scene).add(land).add(flower)
+        for (const _ of util.range(5)) {
+            // create a flower
+            const flower: model.Flower = await objectGenerating.FlowersGenerator.next()
+            // add to scene
+            threeEx.SceneHelper.of(scene).add(flower)
+            // update flower on screen
+            rendering.update(flower)
+        }
 
         // render
         rendering.render(renderer, scene, camera)
-        rendering.update(model.Flower.of(stem, torus, stamens, petals, leaves))
     }
 }
 
