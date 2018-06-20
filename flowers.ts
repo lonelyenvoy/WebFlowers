@@ -23,6 +23,15 @@ namespace constant {
             export const min = 20
             export const max = 150
         }
+        export const restrictedAreas = [
+            [[30, 20], [30, 60], [-10, 60], [-10, 20]], // small stone
+            [[60, -10], [170, -10], [170, 60], [60, 60]], // big stone
+            [[160, 50], [210, 50], [210, 100], [160, 100]], // flower in background
+            [[10, -120], [-50, -120], [-50, -30], [10, -30]],
+            [[-60, -80], [-130, -80], [-130, -30], [-60, -30]],
+            [[-180, 30], [-290, 30], [-180, -70], [-290, -70]], // horse
+            [[400, 30], [-300, -270], [-300, -10000], [400, -10000]] // background
+        ]
     }
 }
 
@@ -215,6 +224,30 @@ namespace util {
                 z += vector.z
             }
             return new THREE.Vector3(x / vectors.length, y / vectors.length, z / vectors.length)
+        }
+
+        export function pointInPolygon(point: number[], vs: number[][]) {
+            // https://stackoverflow.com/questions/22521982/js-check-if-point-inside-a-polygon
+            const x = point[0], y = point[1]
+
+            let inside = false
+            for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+                const xi = vs[i][0], yi = vs[i][1]
+                const xj = vs[j][0], yj = vs[j][1]
+
+                const intersect = ((yi > y) != (yj > y))
+                    && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
+                if (intersect) inside = !inside
+            }
+
+            return inside
+        }
+
+        export function pointInPolygons(point: number[], polygons: number[][][]) {
+            for (const polygon of polygons) {
+                if (pointInPolygon(point, polygon)) return true
+            }
+            return false
         }
     }
 }
@@ -424,12 +457,22 @@ namespace model {
             return util.math.meanVector(vectors)
         }
 
+        getProjectionArea(): number[][] {
+            const reference: THREE.Vector3 = this.stem.position
+            return [
+                [reference.x - 10, reference.z - 10],
+                [reference.x + 10, reference.z - 10],
+                [reference.x + 10, reference.z + 10],
+                [reference.x - 10, reference.z + 10],
+            ]
+        }
+
         moveHorizontallyTo(destination: THREE.Vector3): this {
             this.all().map(object => object.position.setX(destination.x).setZ(destination.z))
             return this
         }
 
-        moveRandomly(bounds?: {xMin?: number, xMax?: number, zMin?: number, zMax?: number}): this {
+        moveRandomly(restrictedAreas: number[][][], bounds?: {xMin?: number, xMax?: number, zMin?: number, zMax?: number}): this {
             // set defaults
             if (bounds === undefined) bounds = {}
             if (bounds.xMin === undefined) bounds.xMin = constant.flower.positionInterval.min
@@ -440,9 +483,15 @@ namespace model {
             if (bounds.xMin < 0 || bounds.zMin < 0 || bounds.xMax < bounds.xMin || bounds.zMax < bounds.zMin)
                 throw new error.IllegalArgumentError('Invalid bounds')
 
-            // get random value
-            const xDelta = util.randomlyPick([util.random(-bounds.xMax, -bounds.xMin), util.random(bounds.xMin, bounds.xMax)])
-            const zDelta = util.randomlyPick([util.random(-bounds.zMax, -bounds.zMin), util.random(bounds.zMin, bounds.zMax)])
+            // prevent restricted areas
+            const reference: THREE.Vector3 = this.stem.position
+            let xDelta: number
+            let zDelta: number
+            do {
+                xDelta = util.randomlyPick([util.random(-bounds.xMax, -bounds.xMin), util.random(bounds.xMin, bounds.xMax)])
+                zDelta = util.randomlyPick([util.random(-bounds.zMax, -bounds.zMin), util.random(bounds.zMin, bounds.zMax)])
+            } while ((util.math.pointInPolygons([reference.x + xDelta, reference.z + zDelta], restrictedAreas)))
+
             // move
             this.all().map(object => {
                 object.position.x += xDelta
@@ -838,8 +887,13 @@ namespace control {
                 if (this.generatedFlowers.length === 0) {
                     this.generatedFlowers.push(flower) // initial flower should be at the original position
                 } else {
-                    const last = <model.Flower> util.tail(this.generatedFlowers)
-                    this.generatedFlowers.push(flower.moveRandomly())
+                    const restrictedAreas: number[][][] =
+                        this.generatedFlowers.map(flower => flower.getProjectionArea())
+                    for (const area of constant.flower.restrictedAreas) {
+                        restrictedAreas.push(area)
+                    }
+                    constant.flower.restrictedAreas.forEach(area => restrictedAreas.push(area))
+                    this.generatedFlowers.push(flower.moveRandomly(restrictedAreas))
                 }
                 return <model.Flower> util.tail(this.generatedFlowers)
             }
