@@ -307,9 +307,9 @@ namespace control {
             60,
             dom.canvas().clientWidth / dom.canvas().clientHeight,
             1,
-            1000
+            3000
         )
-        camera.position.set(100, 100, 100)
+        camera.position.set(80, 40, 80)
         camera.up.set(0, 1, 0)
         return camera
     }
@@ -333,8 +333,9 @@ namespace control {
         orbitControls.enableZoom = true
         orbitControls.autoRotate = false
         orbitControls.minDistance  = 20
-        orbitControls.maxDistance  = 2000
+        orbitControls.maxDistance  = 600
         orbitControls.enablePan = true
+        orbitControls.target = new THREE.Vector3(0, 15, 0)
         return orbitControls
     }
 
@@ -397,7 +398,12 @@ namespace control {
          */
         export async function loadLand(): Promise<THREE.Group> {
             const land: THREE.Group = await loadObject('models/land.obj', 'models/land.jpg')
-            return threeEx.GroupHelper.of(land).scale(100, 100, 100).show().collect()
+            return threeEx.GroupHelper.of(land)
+                .scale(30, 30, 30)
+                .rotateY(-Math.PI / 8)
+                .positioning(0, 10, 0)
+                .show()
+                .collect()
         }
 
         /**
@@ -867,11 +873,10 @@ namespace control {
         // light
         scene.add(Light())
 
-        // grid
-        scene.add(GridHelper())
-
-        // axes
         if (debug) {
+            // grid
+            scene.add(GridHelper())
+            // axes
             scene.add(AxesHelper())
         }
 
