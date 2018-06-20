@@ -201,6 +201,21 @@ namespace threeEx {
             return this
         }
 
+        moveX(delta: number): this {
+            this.group.position.x += delta
+            return this
+        }
+
+        moveY(delta: number): this {
+            this.group.position.y += delta
+            return this
+        }
+
+        moveZ(delta: number): this {
+            this.group.position.z += delta
+            return this
+        }
+
         rotate(x: number, y: number, z: number): this {
             this.group.rotation.set(x, y, z)
             return this
@@ -237,6 +252,20 @@ namespace threeEx {
 
         collect(): THREE.Group {
             return this.group
+        }
+    }
+}
+
+namespace model {
+    export class Flower {
+        private constructor(public stem: THREE.Group,
+                            public torus: THREE.Group,
+                            public stamens: THREE.Group[],
+                            public petals: THREE.Group[],
+                            public leaves: THREE.Group[]) {}
+        static of(stem: THREE.Group, torus: THREE.Group,
+                  stamens: THREE.Group[], petals: THREE.Group[], leaves: THREE.Group[]): Flower {
+            return new Flower(stem, torus, stamens, petals, leaves)
         }
     }
 }
@@ -608,20 +637,12 @@ namespace control {
          * Used to check whether it's necessary to repaint the objects in scene
          */
         class ValidityChecker {
-            private constructor(private stem: THREE.Group,
-                                private torus: THREE.Group,
-                                private stamens: THREE.Group[],
-                                private petals: THREE.Group[],
-                                private leaves: THREE.Group[]) {
-                this.stamensLottery = util.boundedRandomBooleanArray(this.stamens.length, constants.minStamens, constants.maxStamens)
-                this.leavesLottery = util.boundedRandomBooleanArray(this.leaves.length, constants.minLeaves, constants.maxLeaves)
+            private constructor(private flower: model.Flower) {
+                this.stamensLottery = util.boundedRandomBooleanArray(this.flower.stamens.length, constants.minStamens, constants.maxStamens)
+                this.leavesLottery = util.boundedRandomBooleanArray(this.flower.leaves.length, constants.minLeaves, constants.maxLeaves)
             }
-            static of(stem: THREE.Group,
-                      torus: THREE.Group,
-                      stamens: THREE.Group[],
-                      petals: THREE.Group[],
-                      leaves: THREE.Group[]): ValidityChecker {
-                return new ValidityChecker(stem, torus, stamens, petals, leaves)
+            static of(flower: model.Flower): ValidityChecker {
+                return new ValidityChecker(flower)
             }
 
             /**
@@ -634,33 +655,33 @@ namespace control {
             private readonly leavesLottery: boolean[]
 
             stemInvalidated(): boolean {
-                return this.stem.scale.y <= 1
+                return this.flower.stem.scale.y <= 1
             }
 
             torusInvalidated(): boolean {
-                return this.stem.scale.y >= 0.7
+                return this.flower.stem.scale.y >= 0.7
             }
 
             stamensInvalidated(): boolean[] {
                 if (this.torusInvalidated()) {
                     return this.stamensLottery
                 } else {
-                    return util.fillArray(Array(this.stamens.length), false) // all false
+                    return util.fillArray(Array(this.flower.stamens.length), false) // all false
                 }
             }
 
             petalsInvalidated(): boolean {
-                return this.stem.scale.y >= 0.61 && this.petals[0].position.y <= 41
+                return this.flower.stem.scale.y >= 0.61 && this.flower.petals[0].position.y <= 41
             }
 
             leavesInvalidities(): boolean[] {
                 return util.andBooleanArrays(this.leavesLottery, [
-                    this.stem.scale.y >= 0.3 && this.leaves[0].position.y <= 10,
-                    this.stem.scale.y >= 0.4 && this.leaves[1].position.y <= 15,
-                    this.stem.scale.y >= 0.45 && this.leaves[2].position.y <= 20,
-                    this.stem.scale.y >= 0.52 && this.leaves[3].position.y <= 24,
-                    this.stem.scale.y >= 0.55 && this.leaves[4].position.y <= 27,
-                    this.stem.scale.y >= 0.6 && this.leaves[5].position.y <= 31,
+                    this.flower.stem.scale.y >= 0.3 && this.flower.leaves[0].position.y <= 10,
+                    this.flower.stem.scale.y >= 0.4 && this.flower.leaves[1].position.y <= 15,
+                    this.flower.stem.scale.y >= 0.45 && this.flower.leaves[2].position.y <= 20,
+                    this.flower.stem.scale.y >= 0.52 && this.flower.leaves[3].position.y <= 24,
+                    this.flower.stem.scale.y >= 0.55 && this.flower.leaves[4].position.y <= 27,
+                    this.flower.stem.scale.y >= 0.6 && this.flower.leaves[5].position.y <= 31,
                 ])
             }
         }
@@ -819,31 +840,28 @@ namespace control {
          * @param {WebGLRenderer} renderer - renderer
          * @param {Scene} scene - scene
          * @param {PerspectiveCamera} camera - camera
-         * @param {Group} stem - stem object
-         * @param {Group} torus - torus object
-         * @param {Group[]} stamens - stamen objects
-         * @param {Group[]} petals - petal objects
-         * @param {Group[]} leaves - leaf objects
+         * @param {Flower} flower - the flower object
          * @impure
          */
         export function render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera,
-                        stem: THREE.Group, torus: THREE.Group,
-                        stamens: THREE.Group[], petals: THREE.Group[], leaves: THREE.Group[]): void {
-            const checker: ValidityChecker = ValidityChecker.of(stem, torus, stamens, petals, leaves);
+                               flower: model.Flower
+        ): void {
+            const checker: ValidityChecker = ValidityChecker.of(flower);
 
             (function frame () {
                 // stem
                 if (checker.stemInvalidated()) {
-                    updateStem(stem)
+                    updateStem(flower.stem)
                 }
                 // torus and stamens
-                updateTorusAndStamens(torus, stamens, checker.torusInvalidated(), checker.stamensInvalidated())
+                updateTorusAndStamens(flower.torus, flower.stamens,
+                    checker.torusInvalidated(), checker.stamensInvalidated())
                 // petals
                 if (checker.petalsInvalidated()) {
-                    updatePetals(petals)
+                    updatePetals(flower.petals)
                 }
                 // leaves
-                updateLeaves(leaves, checker.leavesInvalidities())
+                updateLeaves(flower.leaves, checker.leavesInvalidities())
                 renderer.render(scene, camera)
                 requestAnimationFrame(frame)
             })()
@@ -915,7 +933,7 @@ namespace control {
         scene.fog = new THREE.Fog(0xcce0ff, 50, 1000)
 
         // render
-        rendering.render(renderer, scene, camera, stem, torus, stamens, petals, leaves)
+        rendering.render(renderer, scene, camera, model.Flower.of(stem, torus, stamens, petals, leaves))
     }
 }
 
