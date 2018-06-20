@@ -587,7 +587,7 @@ namespace control {
     }
 
     function Fog(): THREE.Fog {
-        return new THREE.Fog(0xcce0ff, 50, 1000)
+        return new THREE.Fog(0xcce0ff, 250, 1000)
     }
 
     function OrbitControls(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer)
@@ -1232,7 +1232,8 @@ namespace control {
         const land: THREE.Group = await objectLoading.loadLand()
         scene.add(land)
 
-        for (const _ of util.range(5)) {
+        // inject keyboard trigger to generate new flowers
+        document.onkeypress = async () => {
             // create a flower
             const flower: model.Flower = await objectGenerating.FlowersGenerator.next()
             // add to scene
@@ -1240,6 +1241,8 @@ namespace control {
             // update flower on screen
             rendering.update(flower)
         }
+        // get the first flower
+        document.dispatchEvent(new Event('keypress'))
 
         // render
         rendering.render(renderer, scene, camera)
@@ -1251,5 +1254,5 @@ namespace control {
  */
 (async () => {
     polyfills.install()
-    await control.initialize(true)
+    await control.initialize()
 })()
