@@ -20,7 +20,7 @@ namespace constant {
             }
         }
         export namespace positionInterval {
-            export const min = 20
+            export const min = 0
             export const max = 150
         }
         export const restrictedAreas = [
