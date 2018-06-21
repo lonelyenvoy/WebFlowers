@@ -704,7 +704,7 @@ namespace control {
          */
         export async function loadTorus(): Promise<THREE.Group> {
             const modelUrl = 'models/torus.obj'
-            const textureUrl: string = util.randomlyPick(util.range(5).map(x => 'models/torus' + x + '.jpg'))
+            const textureUrl: string = util.randomlyPick(util.range(6).map(x => 'models/torus' + x + '.jpg'))
             const torusName = 'torus_' + modelUrl + textureUrl
             if (cache[torusName] === undefined) {
                 cache[torusName] = await loadObject(modelUrl, textureUrl)
@@ -723,7 +723,7 @@ namespace control {
          * @returns {Promise<Group[]>} stamens object in Promise
          */
         export async function loadStamens(): Promise<THREE.Group[]> {
-            const modelUrl = 'models/stamen.obj'
+            const modelUrl: string = util.randomlyPick(util.range(4).map(x => 'models/stamen' + x + '.obj'))
             const textureUrl = 'models/stamen.png'
             const stamenName = 'stamen_' + modelUrl + textureUrl
             if (cache[stamenName] === undefined) {
@@ -788,8 +788,8 @@ namespace control {
          * @returns {Promise<Group[]>} petals objects in Promise
          */
         export async function loadPetals(): Promise<THREE.Group[]> {
-            const modelUrl = util.randomlyPick(['petal0.obj', 'petal1.obj', 'petal2.obj'].map(x => 'models/' + x))
-            const textureUrl = util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.png'].map(x => 'models/' + x))
+            const modelUrl = util.randomlyPick(['petal0.obj', 'petal1.obj', 'petal2.obj', 'petal3.obj', 'petal4.obj'].map(x => 'models/' + x))
+            const textureUrl = util.randomlyPick(['petal0.jpg', 'petal1.jpg', 'petal2.jpg', 'petal3.png', 'petal4.jpg', 'petal5.jpg'].map(x => 'models/' + x))
             const petalName = 'petal_' + modelUrl + textureUrl
             if (cache[petalName] === undefined) {
                 cache[petalName] = await loadObject(modelUrl, textureUrl)
