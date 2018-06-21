@@ -552,69 +552,73 @@ namespace polyfills {
  * Main Control flow
  */
 namespace control {
+    /**
+     * THREE.js components
+     */
+    namespace component {
+        export function Renderer(): THREE.WebGLRenderer {
+            const renderer = new THREE.WebGLRenderer({
+                alpha: true,
+                antialias: true
+            })
+            renderer.setSize(dom.canvas().clientWidth, dom.canvas().clientHeight)
+            renderer.setClearColor(0xcce0ff, 1.0)
+            return renderer
+        }
 
-    function Renderer(): THREE.WebGLRenderer {
-        const renderer = new THREE.WebGLRenderer({
-            alpha: true,
-            antialias: true
-        })
-        renderer.setSize(dom.canvas().clientWidth, dom.canvas().clientHeight)
-        renderer.setClearColor(0xcce0ff, 1.0)
-        return renderer
-    }
+        export function Camera(): THREE.PerspectiveCamera {
+            const camera = new THREE.PerspectiveCamera(
+                60,
+                dom.canvas().clientWidth / dom.canvas().clientHeight,
+                1,
+                3000
+            )
+            camera.position.set(-80, 60, 80)
+            camera.up.set(0, 1, 0)
+            return camera
+        }
 
-    function Camera(): THREE.PerspectiveCamera {
-        const camera = new THREE.PerspectiveCamera(
-            60,
-            dom.canvas().clientWidth / dom.canvas().clientHeight,
-            1,
-            3000
-        )
-        camera.position.set(-80, 60, 80)
-        camera.up.set(0, 1, 0)
-        return camera
-    }
+        export function Scene(): THREE.Scene {
+            return new THREE.Scene()
+        }
 
-    function Scene(): THREE.Scene {
-        return new THREE.Scene()
-    }
+        export function Light(): THREE.Light {
+            const light = new THREE.DirectionalLight(0xdfebff)
+            light.position.set(0, 100, 100)
+            light.castShadow = true
+            return light
+        }
 
-    function Light(): THREE.Light {
-        const light = new THREE.DirectionalLight(0xdfebff)
-        light.position.set(0, 100, 100)
-        light.castShadow = true
-        return light
-    }
+        export function Fog(): THREE.Fog {
+            return new THREE.Fog(0xcce0ff, 250, 1000)
+        }
 
-    function Fog(): THREE.Fog {
-        return new THREE.Fog(0xcce0ff, 250, 1000)
-    }
+        export function OrbitControls(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer)
+            : THREE.OrbitControls {
+            const orbitControls = new THREE.OrbitControls(camera, renderer.domElement)
+            orbitControls.enableDamping = true
+            orbitControls.dampingFactor = 0.20
+            orbitControls.enableZoom = true
+            orbitControls.autoRotate = false
+            orbitControls.minDistance  = 20
+            orbitControls.maxDistance  = 600
+            orbitControls.enablePan = true
+            orbitControls.target = new THREE.Vector3(0, 15, 0)
+            return orbitControls
+        }
 
-    function OrbitControls(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer)
-        : THREE.OrbitControls {
-        const orbitControls = new THREE.OrbitControls(camera, renderer.domElement)
-        orbitControls.enableDamping = true
-        orbitControls.dampingFactor = 0.20
-        orbitControls.enableZoom = true
-        orbitControls.autoRotate = false
-        orbitControls.minDistance  = 20
-        orbitControls.maxDistance  = 600
-        orbitControls.enablePan = true
-        orbitControls.target = new THREE.Vector3(0, 15, 0)
-        return orbitControls
-    }
+        export function GridHelper(): THREE.GridHelper {
+            return new THREE.GridHelper(
+                1000,
+                100,
+                0xF0F0FF,
+                0xF0F8FF
+            )
+        }
 
-    function GridHelper(): THREE.GridHelper {
-        return new THREE.GridHelper(
-            1000,
-            100,
-            0xF0F0FF,
-            0xF0F8FF
-        )
-    }
-
-    function AxesHelper(): THREE.AxesHelper {
-        return new THREE.AxesHelper(50)
+        export function AxesHelper(): THREE.AxesHelper {
+            return new THREE.AxesHelper(50)
+        }
     }
 
     /**
@@ -1193,30 +1197,30 @@ namespace control {
      */
     export async function initialize(debug = false): Promise<void> {
         // renderer
-        const renderer: THREE.WebGLRenderer = Renderer()
+        const renderer: THREE.WebGLRenderer = component.Renderer()
         dom.canvas().appendChild(renderer.domElement)
 
         // camera
-        const camera: THREE.PerspectiveCamera = Camera()
+        const camera: THREE.PerspectiveCamera = component.Camera()
 
         // scene
-        const scene: THREE.Scene = Scene()
+        const scene: THREE.Scene = component.Scene()
 
         // orbitControls
-        const orbitControls: THREE.OrbitControls = OrbitControls(camera, renderer)
+        const orbitControls: THREE.OrbitControls = component.OrbitControls(camera, renderer)
         orbitControls.update()
 
         // light
-        scene.add(Light())
+        scene.add(component.Light())
 
         // fog
-        scene.fog = Fog()
+        scene.fog = component.Fog()
 
         if (debug) {
             // grid
-            scene.add(GridHelper())
+            scene.add(component.GridHelper())
             // axes
-            scene.add(AxesHelper())
+            scene.add(component.AxesHelper())
         }
 
         // resize event
