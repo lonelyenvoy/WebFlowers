@@ -7,12 +7,12 @@ A web app showing a bunch of flowers
 
 - npm >=6.0.0
 - Bower >=1.8.0
+- Typescript >=2.9.0
 - A server utility like SimpleHTTPServer (Python 2), http.server (Python 3), or any IDE supporting this function
-- Typescript >=2.9.0 (optional)
 
 ## Usage in 3 steps
 
-1. Install
+1. Install and compile
 *(This may take some time)*
 
 ```bash
@@ -20,6 +20,7 @@ git clone https://github.com/lonelyenvoy/WebFlowers.git
 cd WebFlowers
 npm install
 bower install
+tsc flowers.ts --lib 'es2018,dom'
 ```
 
 2. Run the server at a port (e.g. 8080)
