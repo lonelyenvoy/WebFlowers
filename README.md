@@ -23,7 +23,7 @@ bower install
 ```
 
 2. Run the server at a port (e.g. 8080)
-3. open your browser and navigate to
+3. Open your browser and navigate to
 
 ```
 http://localhost:8080/flowers.html
