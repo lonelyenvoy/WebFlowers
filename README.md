@@ -5,9 +5,9 @@ A web app showing a bunch of flowers
 
 ## Requirements
 
-- npm >=6.0.0
-- Bower >=1.8.0
-- Typescript >=2.9.0
+- npm >= 6.0.0
+- Bower >= 1.8.0
+- Typescript >= 2.9.0
 - A server utility like SimpleHTTPServer (Python 2), http.server (Python 3), or any IDE supporting this function
 
 ## Usage in 3 steps
