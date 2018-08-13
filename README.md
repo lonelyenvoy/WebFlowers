@@ -23,9 +23,9 @@ bower install
 tsc flowers.ts --lib 'es2018,dom'
 ```
 
-2. Run the server at a port (e.g. 8080)
+2. Run the server at a port (e.g. 8080). 
 
-For example, if py2 is available:
+- For example, if py2 is available:
 ```bash
 python -m SimpleHTTPServer 8080
 ```
